@@ -14,13 +14,17 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using HospitalManagementSystem.Services.Data;
+using HospitalManagementSystem.Services.Navigation;
 namespace HospitalManagementSystem
 {
     public partial class MainWindow : Window
     {
+        private readonly HospitalManagementSystem.Services.Navigation.HMSNavigationService _navigationService;
+
         public MainWindow()
         {
             InitializeComponent();
+            _navigationService = new HospitalManagementSystem.Services.Navigation.HMSNavigationService(MainContentArea);
             TestDatabaseConnection();
         }
 
@@ -32,18 +36,23 @@ namespace HospitalManagementSystem
                 {
                     var userCount = context.Users.Count();
                     var deptCount = context.Departments.Count();
-                    var roomCount = context.Rooms.Count();
 
-                    MessageBox.Show($"Database Connected Successfully!\n\n" +
-                                  $"Users: {userCount}\n" +
-                                  $"Departments: {deptCount}\n" +
-                                  $"Rooms: {roomCount}\n\n" +
-                                  $"Database: {context.Database.Connection.Database}");
+                    StatusText.Text = $"Database: Connected | Users: {userCount} | Departments: {deptCount}";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Database connection failed:\n{ex.Message}");
+                StatusText.Text = $"Database: Error - {ex.Message}";
+            }
+        }
+
+        private void NavigationButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var module = button?.Tag?.ToString();
+            if (!string.IsNullOrEmpty(module))
+            {
+                _navigationService.NavigateTo(module);
             }
         }
     }

@@ -118,6 +118,7 @@
     <Compile Include="Models\User.cs" />
     <Compile Include="Services\Data\HMSDbContext.cs" />
     <Compile Include="Services\Navigation\INavigationService.cs" />
+    <Compile Include="Services\Navigation\NavigationService.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
