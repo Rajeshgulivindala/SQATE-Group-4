@@ -25,6 +25,7 @@ namespace HospitalManagementSystem.Services.Data
         public DbSet<MedicalRecord> MedicalRecords { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

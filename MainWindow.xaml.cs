@@ -1,20 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using HospitalManagementSystem.Services.Authentication;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-using HospitalManagementSystem.Services.Data;
-using HospitalManagementSystem.Services.Navigation;
 namespace HospitalManagementSystem
 {
     public partial class MainWindow : Window
@@ -24,25 +11,29 @@ namespace HospitalManagementSystem
         public MainWindow()
         {
             InitializeComponent();
+
+            // Fast initialization - no database calls
             _navigationService = new HospitalManagementSystem.Services.Navigation.HMSNavigationService(MainContentArea);
-            TestDatabaseConnection();
+
+            // Set welcome message immediately
+            SetWelcomeMessage();
+
+            // Load dashboard immediately
+            _navigationService.NavigateTo("Dashboard");
         }
 
-        private void TestDatabaseConnection()
+        private void SetWelcomeMessage()
         {
-            try
+            if (AuthenticationService.CurrentUser != null)
             {
-                using (var context = new HMSDbContext())
-                {
-                    var userCount = context.Users.Count();
-                    var deptCount = context.Departments.Count();
-
-                    StatusText.Text = $"Database: Connected | Users: {userCount} | Departments: {deptCount}";
-                }
+                var user = AuthenticationService.CurrentUser;
+                StatusText.Text = $"Welcome, {user.Username} ({user.Role}) | Ready";
+                Title = $"HMS - {user.Username}";
             }
-            catch (Exception ex)
+            else
             {
-                StatusText.Text = $"Database: Error - {ex.Message}";
+                StatusText.Text = "Ready";
+                Title = "Hospital Management System";
             }
         }
 
@@ -50,9 +41,11 @@ namespace HospitalManagementSystem
         {
             var button = sender as Button;
             var module = button?.Tag?.ToString();
+
             if (!string.IsNullOrEmpty(module))
             {
                 _navigationService.NavigateTo(module);
+                StatusText.Text = $"Current: {module} | {AuthenticationService.CurrentUser?.Username}";
             }
         }
     }

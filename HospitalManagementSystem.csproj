@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
+  <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{0918351E-544D-4BFA-8109-1079C31927B6}</ProjectGuid>
+    <LoadFromRemoteSources>true</LoadFromRemoteSources>
     <OutputType>WinExe</OutputType>
     <RootNamespace>HospitalManagementSystem</RootNamespace>
     <AssemblyName>HospitalManagementSystem</AssemblyName>
@@ -42,10 +43,10 @@
       <HintPath>packages\BCrypt.Net-Next.4.0.3\lib\net48\BCrypt.Net-Next.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
+      <HintPath>packages\EntityFramework.6.5.1\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <HintPath>packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="MaterialDesignColors, Version=2.1.4.0, Culture=neutral, PublicKeyToken=df2a72020bd7962a, processorArchitecture=MSIL">
       <HintPath>packages\MaterialDesignColors.2.1.4\lib\net462\MaterialDesignColors.dll</HintPath>
@@ -100,12 +101,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Helpers\Converters.cs" />
     <Compile Include="Migrations\202509111936496_InitialCreate.cs" />
     <Compile Include="Migrations\202509111936496_InitialCreate.Designer.cs">
       <DependentUpon>202509111936496_InitialCreate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509172109004_UpdateDatabaseForAuthentication.cs" />
+    <Compile Include="Migrations\202509172109004_UpdateDatabaseForAuthentication.Designer.cs">
+      <DependentUpon>202509172109004_UpdateDatabaseForAuthentication.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Appointment.cs" />
+    <Compile Include="Models\AuditLog.cs" />
     <Compile Include="Models\Department.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\MedicalRecord.cs" />
@@ -116,10 +123,19 @@
     <Compile Include="Models\Staff.cs" />
     <Compile Include="Models\Supplier.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Services\Authentication\AuthenticationService.cs" />
+    <Compile Include="Services\Authentication\AuthorizationAttributes.cs" />
+    <Compile Include="Services\Authentication\CurrentUserService.cs" />
+    <Compile Include="Services\Authentication\PasswordResetService.cs" />
+    <Compile Include="Services\Authentication\SessionManager.cs" />
+    <Compile Include="Services\Authentication\TokenService.cs" />
     <Compile Include="Services\Data\HMSDbContext.cs" />
     <Compile Include="Services\Navigation\INavigationService.cs" />
     <Compile Include="Services\Navigation\NavigationService.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="Views\Windows\LoginWindow.xaml.cs">
+      <DependentUpon>LoginWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -133,6 +149,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\Windows\LoginWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -150,6 +170,9 @@
     </Compile>
     <EmbeddedResource Include="Migrations\202509111936496_InitialCreate.resx">
       <DependentUpon>202509111936496_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509172109004_UpdateDatabaseForAuthentication.resx">
+      <DependentUpon>202509172109004_UpdateDatabaseForAuthentication.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -169,9 +192,7 @@
     <Folder Include="Resources\Images\" />
     <Folder Include="Resources\Styles\" />
     <Folder Include="Resources\Themes\" />
-    <Folder Include="Services\Authentication\" />
     <Folder Include="Views\UserControls\" />
-    <Folder Include="Views\Windows\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
@@ -181,10 +202,10 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\EntityFramework.6.4.4\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\EntityFramework.6.4.4\build\EntityFramework.props'))" />
-    <Error Condition="!Exists('packages\EntityFramework.6.4.4\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\EntityFramework.6.4.4\build\EntityFramework.targets'))" />
     <Error Condition="!Exists('packages\MaterialDesignThemes.4.9.0\build\MaterialDesignThemes.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\MaterialDesignThemes.4.9.0\build\MaterialDesignThemes.targets'))" />
+    <Error Condition="!Exists('packages\EntityFramework.6.5.1\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\EntityFramework.6.5.1\build\EntityFramework.props'))" />
+    <Error Condition="!Exists('packages\EntityFramework.6.5.1\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\EntityFramework.6.5.1\build\EntityFramework.targets'))" />
   </Target>
-  <Import Project="packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
   <Import Project="packages\MaterialDesignThemes.4.9.0\build\MaterialDesignThemes.targets" Condition="Exists('packages\MaterialDesignThemes.4.9.0\build\MaterialDesignThemes.targets')" />
+  <Import Project="packages\EntityFramework.6.5.1\build\EntityFramework.targets" Condition="Exists('packages\EntityFramework.6.5.1\build\EntityFramework.targets')" />
 </Project>
