@@ -1,0 +1,70 @@
+﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.PurchaseApprovalsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:HospitalManagementSystem.Views.UserControls"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+	<UserControl.Resources>
+		<!-- Style for the title text block -->
+		<Style x:Key="TitleStyle" TargetType="TextBlock">
+			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Foreground" Value="#003366"/>
+			<Setter Property="HorizontalAlignment" Value="Center"/>
+		</Style>
+
+		<!-- Style for the action buttons -->
+		<Style x:Key="ActionButtonStyle" TargetType="Button">
+			<Setter Property="Margin" Value="2"/>
+			<Setter Property="Padding" Value="5,2"/>
+			<Setter Property="Background" Value="#007ACC"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+	</UserControl.Resources>
+
+	<Grid Background="#F0F0F0">
+		<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="750">
+			<TextBlock Text="✅ Purchase Approvals" Style="{StaticResource TitleStyle}"
+                       Margin="0,0,0,20"/>
+
+			<!-- DataGrid to show submitted purchase orders -->
+			<DataGrid x:Name="PurchaseOrdersDataGrid"
+                      Height="350"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      ItemsSource="{Binding SubmittedPurchaseOrders}"
+                      CanUserAddRows="False">
+				<DataGrid.Columns>
+					<DataGridTextColumn Header="Order ID" Binding="{Binding OrderId}"/>
+					<DataGridTextColumn Header="Supplier ID" Binding="{Binding SupplierId}"/>
+					<DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+					<DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount, StringFormat='{}{0:C}'}"/>
+					<DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+
+					<!-- Action buttons column -->
+					<DataGridTemplateColumn Header="Actions">
+						<DataGridTemplateColumn.CellTemplate>
+							<DataTemplate>
+								<StackPanel Orientation="Horizontal">
+									<Button Content="Approve"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}, Path=DataContext.ApproveCommand}"
+                                            CommandParameter="{Binding}"/>
+									<Button Content="Reject"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Background="Red"
+                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}, Path=DataContext.RejectCommand}"
+                                            CommandParameter="{Binding}"/>
+								</StackPanel>
+							</DataTemplate>
+						</DataGridTemplateColumn.CellTemplate>
+					</DataGridTemplateColumn>
+				</DataGrid.Columns>
+			</DataGrid>
+		</StackPanel>
+	</Grid>
+</UserControl>

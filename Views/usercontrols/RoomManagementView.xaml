@@ -1,0 +1,147 @@
+﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.RoomManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="800">
+	<UserControl.Resources>
+		<!-- Style for NavigationButton -->
+		<Style x:Key="NavigationButton" TargetType="Button">
+			<Setter Property="Background" Value="#007ACC"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Padding" Value="10"/>
+			<Setter Property="BorderBrush" Value="#005C9A"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Cursor" Value="Hand"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="Button">
+						<Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+							<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+			<Style.Triggers>
+				<Trigger Property="IsMouseOver" Value="True">
+					<Setter Property="Background" Value="#005C9A"/>
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+	</UserControl.Resources>
+	<Grid Background="#F0F0F0">
+		<StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" Width="700">
+			<TextBlock Text="🛏️ Room Management"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"
+                       HorizontalAlignment="Center"/>
+
+			<Grid Margin="0,10">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+
+				<Label Content="Department ID:" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtDepartmentID" Grid.Row="0" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Room Number:" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtRoomNumber" Grid.Row="1" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Room Type:" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
+				<ComboBox x:Name="cmbRoomType" Grid.Row="2" Grid.Column="1" Height="30" Padding="5">
+					<ComboBoxItem Content="Standard"/>
+					<ComboBoxItem Content="ICU"/>
+					<ComboBoxItem Content="Private"/>
+				</ComboBox>
+
+				<Label Content="Capacity:" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtCapacity" Grid.Row="3" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Equipment:" Grid.Row="4" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtEquipment" Grid.Row="4" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Status:" Grid.Row="5" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtStatus" Grid.Row="5" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Floor:" Grid.Row="6" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtFloor" Grid.Row="6" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Description:" Grid.Row="7" Grid.Column="0" Margin="0,5"/>
+				<TextBox x:Name="txtDescription" Grid.Row="7" Grid.Column="1" Height="30" Padding="5"/>
+
+				<Label Content="Is Active:" Grid.Row="8" Grid.Column="0" Margin="0,5"/>
+				<CheckBox x:Name="chkIsActive" Grid.Row="8" Grid.Column="1" VerticalAlignment="Center" Margin="5"/>
+			</Grid>
+
+			<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+				<Button x:Name="btnAddRoom" Content="Add Room" Margin="5,0" Click="btnAddRoom_Click" Style="{StaticResource NavigationButton}"/>
+				<Button x:Name="btnUpdateRoom" Content="Update Room" Margin="5,0" Click="btnUpdateRoom_Click" Style="{StaticResource NavigationButton}"/>
+				<Button x:Name="btnDeleteRoom" Content="Delete Room" Margin="5,0" Click="btnDeleteRoom_Click" Style="{StaticResource NavigationButton}"/>
+			</StackPanel>
+
+			<TextBlock Text="All Room Details"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Margin="0,40,0,10"
+                       HorizontalAlignment="Center"/>
+			<DataGrid x:Name="RoomsDataGrid" Height="300"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      ItemsSource="{Binding Rooms}"
+                      Margin="0,0,0,20">
+				<DataGrid.Columns>
+					<DataGridTextColumn Header="Room ID" Binding="{Binding RoomID}"/>
+					<DataGridTextColumn Header="Department ID" Binding="{Binding DepartmentID}"/>
+					<DataGridTextColumn Header="Room Number" Binding="{Binding RoomNumber}"/>
+					<DataGridTextColumn Header="Room Type" Binding="{Binding RoomType}"/>
+					<DataGridTextColumn Header="Capacity" Binding="{Binding Capacity}"/>
+					<DataGridTextColumn Header="Equipment" Binding="{Binding Equipment}"/>
+					<DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+					<DataGridTextColumn Header="Floor" Binding="{Binding Floor}"/>
+					<DataGridTextColumn Header="Description" Binding="{Binding Description}"/>
+					<DataGridCheckBoxColumn Header="Is Active" Binding="{Binding IsActive}"/>
+					<DataGridTextColumn Header="Created Date" Binding="{Binding CreatedDate}"/>
+				</DataGrid.Columns>
+			</DataGrid>
+
+			<TextBlock Text="Room Status Overview"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Margin="0,20,0,10"
+                       HorizontalAlignment="Center"/>
+			<ListBox x:Name="RoomStatusListBox"
+                     Height="150"
+                     ItemsSource="{Binding Rooms}">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<StackPanel Orientation="Horizontal" Margin="5">
+							<TextBlock Text="{Binding RoomNumber}" FontWeight="Bold" Margin="0,0,10,0"/>
+							<TextBlock Text="{Binding RoomType}" Margin="0,0,10,0"/>
+							<TextBlock Text="Status: "/>
+							<TextBlock Text="{Binding Status}" FontWeight="Bold"/>
+						</StackPanel>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+		</StackPanel>
+	</Grid>
+</UserControl>

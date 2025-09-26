@@ -1,0 +1,159 @@
+﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.StockMonitoringView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="650" d:DesignWidth="1200">
+
+	<UserControl.Resources>
+		<!-- Self-contained style for all buttons in this view -->
+		<Style x:Key="CrudButton" TargetType="Button">
+			<Setter Property="Background" Value="#3498db"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="FontWeight" Value="SemiBold"/>
+			<Setter Property="BorderBrush" Value="#2980b9"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Padding" Value="10,5"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
+			<Setter Property="VerticalContentAlignment" Value="Center"/>
+			<Setter Property="Cursor" Value="Hand"/>
+			<Setter Property="Margin" Value="5,0"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="Button">
+						<Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+							<ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+						</Border>
+						<ControlTemplate.Triggers>
+							<Trigger Property="IsMouseOver" Value="True">
+								<Setter TargetName="ButtonBorder" Property="Background" Value="#2980b9"/>
+							</Trigger>
+							<Trigger Property="IsPressed" Value="True">
+								<Setter TargetName="ButtonBorder" Property="Background" Value="#2575a6"/>
+								<Setter Property="RenderTransform">
+									<Setter.Value>
+										<ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+									</Setter.Value>
+								</Setter>
+								<Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+							</Trigger>
+						</ControlTemplate.Triggers>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+	</UserControl.Resources>
+
+	<Grid Background="#F0F0F0" Margin="20">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+
+		<!-- Header -->
+		<TextBlock Grid.Row="0"
+                   Text="📦 Stock Level Monitoring"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
+
+		<!-- Main Content Grid -->
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="400"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+
+			<!-- Left Side: CRUD Form -->
+			<ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+				<StackPanel Margin="0,0,20,0">
+					<TextBlock Text="Add/Edit Stock Item" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+					<Label Content="Item ID:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtItemId" Height="30" Padding="5" IsReadOnly="True" Background="#E0E0E0"/>
+
+					<Label Content="Supplier ID:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtSupplierId" Height="30" Padding="5"/>
+
+					<Label Content="Item Code:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtItemCode" Height="30" Padding="5"/>
+
+					<Label Content="Name:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtName" Height="30" Padding="5"/>
+
+					<Label Content="Category:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtCategory" Height="30" Padding="5"/>
+
+					<Label Content="Description:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtDescription" Height="50" Padding="5" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+
+					<Label Content="Current Stock:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtCurrentStock" Height="30" Padding="5"/>
+
+					<Label Content="Minimum Level:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtMinimumLevel" Height="30" Padding="5"/>
+
+					<Label Content="Maximum Level:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtMaximumLevel" Height="30" Padding="5"/>
+
+					<Label Content="Unit Price:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtUnitPrice" Height="30" Padding="5"/>
+
+					<Label Content="Expiry Date:" Margin="0,5,0,0"/>
+					<DatePicker x:Name="dpExpiryDate" Height="30" Padding="5"/>
+
+					<Label Content="Location:" Margin="0,5,0,0"/>
+					<TextBox x:Name="txtLocation" Height="30" Padding="5"/>
+
+					<Label Content="Status:" Margin="0,5,0,0"/>
+					<ComboBox x:Name="cmbStatus" Height="30" Padding="5">
+						<ComboBoxItem Content="In Stock"/>
+						<ComboBoxItem Content="Low Stock"/>
+						<ComboBoxItem Content="Expired"/>
+						<ComboBoxItem Content="Discontinued"/>
+					</ComboBox>
+
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+						<Button x:Name="btnAdd" Content="Add Item" Style="{StaticResource CrudButton}" Click="btnAdd_Click"/>
+						<Button x:Name="btnUpdate" Content="Update Item" Style="{StaticResource CrudButton}" Click="btnUpdate_Click" IsEnabled="False"/>
+						<Button x:Name="btnDelete" Content="Delete Item" Style="{StaticResource CrudButton}" Background="#e74c3c" BorderBrush="#c0392b" Click="btnDelete_Click" IsEnabled="False"/>
+						<Button x:Name="btnClear" Content="Clear" Style="{StaticResource CrudButton}" Background="#95a5a6" BorderBrush="#7f8c8d" Click="btnClear_Click"/>
+					</StackPanel>
+				</StackPanel>
+			</ScrollViewer>
+
+			<!-- Right Side: DataGrid -->
+			<StackPanel Grid.Column="1" Margin="20,0,0,0">
+				<TextBlock Text="Existing Stock Items" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+				<DataGrid x:Name="StockDataGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          ItemsSource="{Binding}"
+                          SelectionChanged="StockDataGrid_SelectionChanged"
+                          Background="#FFFFFF"
+                          BorderBrush="#CCCCCC"
+                          BorderThickness="1">
+					<DataGrid.Columns>
+						<DataGridTextColumn Header="Item ID" Binding="{Binding ItemId}" Width="Auto"/>
+						<DataGridTextColumn Header="Item Code" Binding="{Binding ItemCode}" Width="Auto"/>
+						<DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+						<DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="*"/>
+						<DataGridTextColumn Header="Current Stock" Binding="{Binding CurrentStock}" Width="Auto"/>
+						<DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice}" Width="Auto"/>
+						<DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="*"/>
+						<DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+					</DataGrid.Columns>
+				</DataGrid>
+			</StackPanel>
+		</Grid>
+	</Grid>
+</UserControl>

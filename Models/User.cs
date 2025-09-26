@@ -34,8 +34,8 @@ namespace HospitalManagementSystem.Models
 
         [StringLength(50)]
         public string Salt { get; set; }
-
-        // Navigation property
-       // public virtual Staff Staff { get; set; }//
-    }
+    
+        
+           
+        }
 }
