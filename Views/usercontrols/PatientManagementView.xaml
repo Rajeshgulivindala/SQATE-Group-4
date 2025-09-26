@@ -1,0 +1,170 @@
+﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.PatientManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1000">
+	<UserControl.Resources>
+		<!-- Style for form labels -->
+		<Style x:Key="FormLabel" TargetType="Label">
+			<Setter Property="Grid.Column" Value="0"/>
+			<Setter Property="Margin" Value="0,5"/>
+		</Style>
+
+		<!-- Style for form text boxes and combos -->
+		<Style x:Key="FormTextBox" TargetType="TextBox">
+			<Setter Property="Grid.Column" Value="1"/>
+			<Setter Property="Height" Value="30"/>
+			<Setter Property="Padding" Value="5"/>
+			<Setter Property="Margin" Value="0,5"/>
+		</Style>
+
+		<Style x:Key="FormComboBox" TargetType="ComboBox">
+			<Setter Property="Grid.Column" Value="1"/>
+			<Setter Property="Height" Value="30"/>
+			<Setter Property="Margin" Value="0,5"/>
+		</Style>
+
+		<!-- Style for CRUD buttons -->
+		<Style x:Key="CrudButton" TargetType="Button">
+			<Setter Property="Width" Value="150"/>
+			<Setter Property="Height" Value="40"/>
+			<Setter Property="Margin" Value="5,0"/>
+			<Setter Property="Background" Value="#007ACC"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Padding" Value="10"/>
+			<Setter Property="BorderBrush" Value="#005C9A"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+
+	</UserControl.Resources>
+	<Grid Background="#F0F0F0">
+		<StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" Width="900">
+			<TextBlock Text="👨‍⚕️ Patient Management"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"
+                       HorizontalAlignment="Center"/>
+
+			<!-- Search and Filter Section -->
+			<Grid Margin="0,10">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="Auto"/>
+				</Grid.ColumnDefinitions>
+				<Label Content="Search by Patient ID:" Grid.Column="0" VerticalAlignment="Center" FontWeight="Bold"/>
+				<TextBox x:Name="txtSearch" Grid.Column="1" Height="30" Padding="5" Margin="10,0" VerticalAlignment="Center"/>
+				<Button Content="Search" Grid.Column="2" Width="100" Style="{StaticResource CrudButton}" Click="SearchButton_Click"/>
+			</Grid>
+
+			<!-- Patient Form Section -->
+			<ScrollViewer Height="300" VerticalScrollBarVisibility="Auto" Margin="0,20,0,10">
+				<Grid x:Name="InputFormGrid" Margin="0,10" Width="800">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+					</Grid.RowDefinitions>
+
+					<Label Content="Patient Code:" Grid.Row="0" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtPatientCode" Grid.Row="0" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="First Name:" Grid.Row="0" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtFirstName" Grid.Row="0" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Last Name:" Grid.Row="1" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtLastName" Grid.Row="1" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Date of Birth:" Grid.Row="1" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<DatePicker x:Name="dpDOB" Grid.Row="1" Grid.Column="3" Height="30" Margin="0,5"/>
+
+					<Label Content="Gender:" Grid.Row="2" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<ComboBox x:Name="cmbGender" Grid.Row="2" Grid.Column="1" Style="{StaticResource FormComboBox}">
+						<ComboBoxItem Content="Male"/>
+						<ComboBoxItem Content="Female"/>
+						<ComboBoxItem Content="Other"/>
+					</ComboBox>
+
+					<Label Content="Phone:" Grid.Row="2" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtPhone" Grid.Row="2" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Email:" Grid.Row="3" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtEmail" Grid.Row="3" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Address:" Grid.Row="3" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtAddress" Grid.Row="3" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Emergency Contact:" Grid.Row="4" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtEmergencyContact" Grid.Row="4" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Emergency Phone:" Grid.Row="4" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtEmergencyPhone" Grid.Row="4" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Insurance Provider:" Grid.Row="5" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtInsuranceProvider" Grid.Row="5" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Insurance Number:" Grid.Row="5" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtInsuranceNumber" Grid.Row="5" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Blood Type:" Grid.Row="6" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtBloodType" Grid.Row="6" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Allergies:" Grid.Row="6" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtAllergies" Grid.Row="6" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Medical Conditions:" Grid.Row="7" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+					<TextBox x:Name="txtMedicalConditions" Grid.Row="7" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+					<Label Content="Is Active:" Grid.Row="7" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+					<CheckBox x:Name="chkIsActive" Grid.Row="7" Grid.Column="3" VerticalAlignment="Center" Margin="5"/>
+				</Grid>
+			</ScrollViewer>
+
+			<!-- CRUD Buttons -->
+			<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+				<Button Content="Add Patient" Click="AddPatientButton_Click" Style="{StaticResource CrudButton}"/>
+				<Button Content="Update Patient" Click="UpdatePatientButton_Click" Style="{StaticResource CrudButton}"/>
+				<Button Content="Delete Patient" Click="DeletePatientButton_Click" Style="{StaticResource CrudButton}"/>
+			</StackPanel>
+
+			<!-- Patient List Section -->
+			<TextBlock Text="Existing Patients"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Margin="0,40,0,10"
+                       HorizontalAlignment="Center"/>
+			<DataGrid x:Name="PatientsDataGrid"
+                      Height="300"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      ItemsSource="{Binding Patients}"
+                      SelectionChanged="PatientsDataGrid_SelectionChanged">
+				<DataGrid.Columns>
+					<DataGridTextColumn Header="Patient ID" Binding="{Binding PatientID}"/>
+					<DataGridTextColumn Header="First Name" Binding="{Binding FirstName}"/>
+					<DataGridTextColumn Header="Last Name" Binding="{Binding LastName}"/>
+					<DataGridTextColumn Header="Phone" Binding="{Binding Phone}"/>
+					<DataGridTextColumn Header="Email" Binding="{Binding Email}"/>
+					<DataGridCheckBoxColumn Header="Is Active" Binding="{Binding IsActive}"/>
+					<DataGridTextColumn Header="Created Date" Binding="{Binding CreatedDate}"/>
+				</DataGrid.Columns>
+			</DataGrid>
+		</StackPanel>
+	</Grid>
+</UserControl>

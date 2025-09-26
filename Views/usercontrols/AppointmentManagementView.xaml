@@ -1,0 +1,148 @@
+﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.AppointmentManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <!-- Style for form labels -->
+        <Style x:Key="FormLabel" TargetType="Label">
+            <Setter Property="Grid.Column" Value="0"/>
+            <Setter Property="Margin" Value="0,5"/>
+        </Style>
+
+        <!-- Style for form text boxes and combos -->
+        <Style x:Key="FormTextBox" TargetType="TextBox">
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="0,5"/>
+        </Style>
+
+        <Style x:Key="FormComboBox" TargetType="ComboBox">
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="0,5"/>
+        </Style>
+
+        <!-- Style for CRUD buttons -->
+        <Style x:Key="CrudButton" TargetType="Button">
+            <Setter Property="Width" Value="150"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Background" Value="#007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderBrush" Value="#005C9A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#F0F0F0">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" Width="900">
+            <TextBlock Text="📅 Appointment Management"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"
+                       HorizontalAlignment="Center"/>
+
+            <!-- Search Section -->
+            <Grid Margin="0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="Search by Patient ID:" Grid.Column="0" VerticalAlignment="Center" FontWeight="Bold"/>
+                <TextBox x:Name="txtSearchPatientId" Grid.Column="1" Height="30" Padding="5" Margin="10,0" VerticalAlignment="Center"/>
+                <Button Content="Search" Grid.Column="2" Width="100" Style="{StaticResource CrudButton}" Click="SearchButton_Click"/>
+            </Grid>
+
+            <!-- Appointment Form Section -->
+            <ScrollViewer Height="300" VerticalScrollBarVisibility="Auto" Margin="0,20,0,10">
+                <Grid x:Name="InputFormGrid" Margin="0,10" Width="800">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Content="Appointment ID:" Grid.Row="0" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtAppointmentID" IsReadOnly="True" Background="#E9ECEF" Grid.Row="0" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Patient ID:" Grid.Row="0" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtPatientID" Grid.Row="0" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Staff ID:" Grid.Row="1" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtStaffID" Grid.Row="1" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Room ID:" Grid.Row="1" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtRoomID" Grid.Row="1" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Appointment Date:" Grid.Row="2" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <DatePicker x:Name="dpAppointmentDate" Grid.Row="2" Grid.Column="1" Height="30" Margin="0,5"/>
+
+                    <Label Content="Duration (min):" Grid.Row="2" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtDuration" Grid.Row="2" Grid.Column="3" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Type:" Grid.Row="3" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <ComboBox x:Name="cmbType" Grid.Row="3" Grid.Column="1" Style="{StaticResource FormComboBox}"/>
+
+                    <Label Content="Status:" Grid.Row="3" Grid.Column="2" Style="{StaticResource FormLabel}"/>
+                    <ComboBox x:Name="cmbStatus" Grid.Row="3" Grid.Column="3" Style="{StaticResource FormComboBox}"/>
+
+                    <Label Content="Reason:" Grid.Row="4" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtReason" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Notes:" Grid.Row="5" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtNotes" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Style="{StaticResource FormTextBox}"/>
+
+                    <Label Content="Created By:" Grid.Row="6" Grid.Column="0" Style="{StaticResource FormLabel}"/>
+                    <TextBox x:Name="txtCreatedBy" IsReadOnly="True" Background="#E9ECEF" Grid.Row="6" Grid.Column="1" Style="{StaticResource FormTextBox}"/>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- CRUD Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <Button Content="Add Appointment" Click="AddButton_Click" Style="{StaticResource CrudButton}"/>
+                <Button Content="Update Appointment" Click="UpdateButton_Click" Style="{StaticResource CrudButton}"/>
+                <Button Content="Delete Appointment" Click="DeleteButton_Click" Style="{StaticResource CrudButton}"/>
+            </StackPanel>
+
+            <!-- Appointment List Section -->
+            <TextBlock Text="Existing Appointments"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Margin="0,40,0,10"
+                       HorizontalAlignment="Center"/>
+            <DataGrid x:Name="AppointmentsDataGrid"
+                      Height="300"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      ItemsSource="{Binding Appointments}"
+                      SelectionChanged="AppointmentsDataGrid_SelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Appt ID" Binding="{Binding AppointmentID}"/>
+                    <DataGridTextColumn Header="Patient ID" Binding="{Binding PatientID}"/>
+                    <DataGridTextColumn Header="Staff ID" Binding="{Binding StaffID}"/>
+                    <DataGridTextColumn Header="Date" Binding="{Binding AppointmentDate, StringFormat='dd/MM/yyyy'}"/>
+                    <DataGridTextColumn Header="Time" Binding="{Binding AppointmentDate, StringFormat='HH:mm'}"/>
+                    <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </Grid>
+</UserControl>

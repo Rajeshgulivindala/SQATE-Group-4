@@ -18,6 +18,21 @@
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -63,7 +78,9 @@
     <Reference Include="Prism.Wpf, Version=8.1.97.5141, Culture=neutral, PublicKeyToken=40ee6c3a2184dc59, processorArchitecture=MSIL">
       <HintPath>packages\Prism.Wpf.8.1.97\lib\net47\Prism.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="System">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.dll</HintPath>
+    </Reference>
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
@@ -102,6 +119,11 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Helpers\Converters.cs" />
+    <Compile Include="HMSDatabaseDataSet1.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>HMSDatabaseDataSet1.xsd</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\202509111936496_InitialCreate.cs" />
     <Compile Include="Migrations\202509111936496_InitialCreate.Designer.cs">
       <DependentUpon>202509111936496_InitialCreate.cs</DependentUpon>
@@ -114,6 +136,7 @@
     <Compile Include="Models\Appointment.cs" />
     <Compile Include="Models\AuditLog.cs" />
     <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\HospitalSettings.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\MedicalRecord.cs" />
     <Compile Include="Models\OrderDetail.cs" />
@@ -130,13 +153,85 @@
     <Compile Include="Services\Authentication\SessionManager.cs" />
     <Compile Include="Services\Authentication\TokenService.cs" />
     <Compile Include="Services\Data\HMSDbContext.cs" />
+    <Compile Include="Services\Data\UserService.cs" />
     <Compile Include="Services\Navigation\INavigationService.cs" />
     <Compile Include="Services\Navigation\NavigationService.cs" />
+    <Compile Include="Utilities\UserCreator.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="Views\UserControls\AppointmentManagementView.xaml.cs">
+      <DependentUpon>AppointmentManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\AuditLogsView.xaml.cs">
+      <DependentUpon>AuditLogsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\BackupMaintenanceView.xaml.cs">
+      <DependentUpon>BackupMaintenanceView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\Converters.cs" />
+    <Compile Include="Views\UserControls\DashboardView.xaml.cs">
+      <DependentUpon>DashboardView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\DeactivateUsersView.xaml.cs">
+      <DependentUpon>DeactivateUsersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\DepartmentManagementView.xaml.cs">
+      <DependentUpon>DepartmentManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\FinancialAnalyticsView.xaml.cs">
+      <DependentUpon>FinancialAnalyticsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\HospitalSettingsView.xaml.cs">
+      <DependentUpon>HospitalSettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\MedicalRecordsView.xaml.cs">
+      <DependentUpon>MedicalRecordsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\ModifyRolesView.xaml.cs">
+      <DependentUpon>ModifyRolesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\PasswordResetView.xaml.cs">
+      <DependentUpon>PasswordResetView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\Patient.cs" />
+    <Compile Include="Views\UserControls\PatientManagementView.xaml.cs">
+      <DependentUpon>PatientManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\PurchaseApprovalsView.xaml.cs">
+      <DependentUpon>PurchaseApprovalsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\PurchaseApprovalsViewModel.cs" />
+    <Compile Include="Views\UserControls\PurchaseOrder.cs" />
+    <Compile Include="Views\UserControls\PurchaseOrderView.xaml.cs">
+      <DependentUpon>PurchaseOrderView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\RegisterUserView.xaml.cs">
+      <DependentUpon>RegisterUserView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\RoomManagementView.xaml.cs">
+      <DependentUpon>RoomManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\StaffPerformanceView.xaml.cs">
+      <DependentUpon>StaffPerformanceView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\StockMonitoringView.xaml.cs">
+      <DependentUpon>StockMonitoringView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\SupplierManagementView.xaml.cs">
+      <DependentUpon>SupplierManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UserControls\SystemUsageView.xaml.cs">
+      <DependentUpon>SystemUsageView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Windows\LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
-    <Page Include="MainWindow.xaml">
+    <Compile Include="Views\Windows\UserOnboardingWindow.xaml.cs">
+      <DependentUpon>UserOnboardingWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Views\UserControls\PurchaseOrderView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Windows\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -145,12 +240,72 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Helpers\RelayCommand.cs" />
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Views\Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\UserControls\AppointmentManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\AuditLogsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\BackupMaintenanceView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\DashboardView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\DeactivateUsersView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\DepartmentManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\FinancialAnalyticsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\HospitalSettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\MedicalRecordsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\ModifyRolesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\PasswordResetView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\PatientManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\PurchaseApprovalsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\RegisterUserView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\RoomManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\StaffPerformanceView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\StockMonitoringView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\SupplierManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\SystemUsageView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Windows\LoginWindow.xaml">
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Windows\UserOnboardingWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -179,6 +334,17 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="CODING_STANDARDS.md" />
+    <None Include="HMSDatabaseDataSet1.xsc">
+      <DependentUpon>HMSDatabaseDataSet1.xsd</DependentUpon>
+    </None>
+    <None Include="HMSDatabaseDataSet1.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>HMSDatabaseDataSet1.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="HMSDatabaseDataSet1.xss">
+      <DependentUpon>HMSDatabaseDataSet1.xsd</DependentUpon>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -192,10 +358,24 @@
     <Folder Include="Resources\Images\" />
     <Folder Include="Resources\Styles\" />
     <Folder Include="Resources\Themes\" />
-    <Folder Include="Views\UserControls\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

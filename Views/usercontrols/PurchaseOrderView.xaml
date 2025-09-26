@@ -1,0 +1,143 @@
+<UserControl x:Class="HospitalManagementSystem.Views.UserControls.PurchaseOrdersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:HospitalManagementSystem.Views.UserControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <!-- Define the converters and styles here -->
+    <UserControl.Resources>
+        <!-- Converter Instances -->
+        <local:NullToFalseConverter x:Key="NullToFalseConverter"/>
+        <local:NullToTrueConverter x:Key="NullToTrueConverter"/>
+        <local:StatusToBoolConverter x:Key="StatusToBoolConverter"/>
+
+        <!-- Styles -->
+        <Style x:Key="TitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#003366"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="Label">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style TargetType="DatePicker">
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Background" Value="#007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Main Title -->
+        <TextBlock Text="Purchase Order Management" Style="{StaticResource TitleStyle}" Margin="0,0,0,10" Grid.Row="0"/>
+
+        <!-- Data Grid to display purchase orders -->
+        <DataGrid x:Name="PurchaseOrdersDataGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionChanged="PurchaseOrdersDataGrid_SelectionChanged"
+                  ItemsSource="{Binding PurchaseOrders}"
+                  Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Order ID" Binding="{Binding PurchaseOrderId}"/>
+                <DataGridTextColumn Header="Supplier ID" Binding="{Binding SupplierId}"/>
+                <DataGridTextColumn Header="Order Date" Binding="{Binding OrderDate, StringFormat='{}{0:d}'}"/>
+                <DataGridTextColumn Header="Total Amount" Binding="{Binding TotalAmount, StringFormat='{}{0:C}'}"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Input Form Section -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Row 0: Order ID -->
+                <Label Content="Order ID:" Grid.Row="0" Grid.Column="0"/>
+                <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Text="{Binding OrderIdText}"/>
+
+                <!-- Row 1: Supplier ID & Order Date -->
+                <Label Content="Supplier ID:" Grid.Row="1" Grid.Column="0"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SupplierIdText}"/>
+
+                <Label Content="Order Date:" Grid.Row="1" Grid.Column="2"/>
+                <DatePicker Grid.Row="1" Grid.Column="3" SelectedDate="{Binding OrderDate}"/>
+
+                <!-- Row 2: Total Amount & Status -->
+                <Label Content="Total Amount:" Grid.Row="2" Grid.Column="0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding TotalAmountText}"/>
+
+                <Label Content="Status:" Grid.Row="2" Grid.Column="2"/>
+                <ComboBox Grid.Row="2" Grid.Column="3" SelectedItem="{Binding Status}">
+                    <ComboBoxItem Content="Draft"/>
+                    <ComboBoxItem Content="Submitted"/>
+                    <ComboBoxItem Content="Approved"/>
+                    <ComboBoxItem Content="Rejected"/>
+                </ComboBox>
+
+                <!-- Row 3: Description -->
+                <Label Content="Description:" Grid.Row="3" Grid.Column="0"/>
+                <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Height="50" TextWrapping="Wrap" AcceptsReturn="True" Text="{Binding DescriptionText}"/>
+
+                <!-- Row 4: Action Buttons -->
+                <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Center" Margin="5,10,5,5">
+                    <Button x:Name="btnAdd" Content="Add" Click="btnAdd_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource NullToTrueConverter}}"/>
+                    <Button x:Name="btnUpdate" Content="Update" Click="btnUpdate_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource NullToFalseConverter}}"/>
+                    <Button x:Name="btnDelete" Content="Delete" Click="btnDelete_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource NullToFalseConverter}}"/>
+                    <Button x:Name="btnClear" Content="Clear" Click="btnClear_Click"/>
+                </StackPanel>
+
+                <!-- Row 5: Submission/Approval Buttons -->
+                <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Center" Margin="5,5,5,10">
+                    <Button x:Name="btnSubmitForApproval" Content="Submit for Approval" Click="btnSubmitForApproval_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource NullToFalseConverter}}"/>
+                    <Button x:Name="btnApprove" Content="Approve" Click="btnApprove_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource StatusToBoolConverter}, ConverterParameter=Submitted}"/>
+                    <Button x:Name="btnReject" Content="Reject" Click="btnReject_Click" IsEnabled="{Binding Path=SelectedPurchaseOrder, Converter={StaticResource StatusToBoolConverter}, ConverterParameter=Submitted}"/>
+                </StackPanel>
+
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
