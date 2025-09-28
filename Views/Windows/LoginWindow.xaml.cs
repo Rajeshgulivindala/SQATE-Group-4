@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using HospitalManagementSystem.Services.Authentication;
 using HospitalManagementSystem.Services.Data;
+using HospitalManagementSystem.Models;
+using BCrypt.Net;
 
 namespace HospitalManagementSystem.Views.Windows
-
 {
     /// <summary>
     /// Interaction logic for LoginWindow.xaml
@@ -26,7 +27,6 @@ namespace HospitalManagementSystem.Views.Windows
             catch (Exception ex)
             {
                 // This will catch any errors that prevent the UI from loading.
-                // Check your Visual Studio Output window for the full error.
                 MessageBox.Show($"Initialization failed: {ex.Message}", "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 throw; // Re-throw the exception to ensure it's logged.
             }
@@ -60,7 +60,6 @@ namespace HospitalManagementSystem.Views.Windows
             }
 
             // --- Simple Account Lockout Check ---
-            // If the user has failed 5 times in the last 15 minutes, lock them out.
             if (_failedLoginAttempts >= 5 && _lastFailedLogin.HasValue &&
                 (DateTime.Now - _lastFailedLogin.Value).TotalMinutes < 15)
             {
@@ -87,19 +86,49 @@ namespace HospitalManagementSystem.Views.Windows
                         AuthenticationService.CurrentUser = user;
                         _failedLoginAttempts = 0;
 
-                        // Open the main window and close the login window.
-                        var mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
+                        // ------------------------------------------------------------------
+                        // UPDATED: ROLE-BASED REDIRECTION LOGIC
+                        // Doctor role now redirects to MainWindow.
+                        // ------------------------------------------------------------------
+                        Window targetWindow = null;
+
+                        // Check the role of the authenticated user
+                        switch (user.Role)
+                        {
+                            case "Admin":
+                                targetWindow = new MainWindow();
+                                break;
+                            case "Doctor":
+                                // Admin and Doctor roles use the full administrative MainWindow
+                                targetWindow = new MainWindow();
+                                break;
+                            case "Nurse":
+                                // Nurse role opens the dedicated Nurse dashboard
+                                targetWindow = new MainWindow();
+                                break;
+                            default:
+                                // Handle unknown roles gracefully
+                                ErrorMessageText.Text = $"Unknown role assigned: {user.Role}. Access denied.";
+                                ResetLoginButton();
+                                return;
+                        }
+
+                        // Open the target window and close the login window
+                        if (targetWindow != null)
+                        {
+                            targetWindow.Show();
+                            this.Close();
+                        }
+                        // ------------------------------------------------------------------
 
                         // Update the last login time in the background to not block the UI.
-                        // We use a new context to avoid threading issues.
                         await Task.Run(() =>
                         {
                             try
                             {
                                 using (var bgContext = new HMSDbContext())
                                 {
+                                    // It's safer to fetch the user again in the new context
                                     var bgUser = bgContext.Users.Find(user.UserID);
                                     if (bgUser != null)
                                     {
@@ -110,8 +139,6 @@ namespace HospitalManagementSystem.Views.Windows
                             }
                             catch (Exception ex)
                             {
-                                // Log the exception but don't show it to the user,
-                                // as it's a non-critical background task.
                                 Console.WriteLine($"Background task failed to update last login: {ex.Message}");
                             }
                         });

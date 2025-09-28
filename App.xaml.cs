@@ -17,11 +17,10 @@ namespace HospitalManagementSystem
 
             // Temporarily add this line to create a test user.
             // You can change "admin" and "adminpassword" to whatever you like.
-            await UserCreator.CreateNewUserAsync("admin", "adminpassword","Admin",true);
+            await UserCreator.CreateNewUserAsync("admin", "adminpassword", "Admin", true);
 
             // After the database and user are created, you can open the login window.
-            var loginWindow = new Views.Windows.LoginWindow();
-            loginWindow.Show();
+
         }
     }
 }

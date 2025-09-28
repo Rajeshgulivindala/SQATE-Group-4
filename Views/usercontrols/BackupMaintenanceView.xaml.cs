@@ -35,6 +35,7 @@ namespace HospitalManagementSystem.Views.UserControls
         /// </summary>
         public class BackupSettings
         {
+            public int BackupSettingID { get; set; }
             public string BackupLocation { get; set; }
             public string BackupFrequency { get; set; }
             public int RetentionPeriodDays { get; set; }
@@ -53,7 +54,7 @@ namespace HospitalManagementSystem.Views.UserControls
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    var sqlQuery = "SELECT * FROM BackupSettings WHERE Id = @Id";
+                    var sqlQuery = "SELECT * FROM BackupSettings WHERE BackupSettingId = @Id";
                     using (var command = new SqlCommand(sqlQuery, connection))
                     {
                         command.Parameters.AddWithValue("@Id", BackupSettingsRecordId);
@@ -111,7 +112,7 @@ namespace HospitalManagementSystem.Views.UserControls
                             SET BackupLocation = @BackupLocation, BackupFrequency = @BackupFrequency, 
                                 RetentionPeriodDays = @RetentionPeriodDays, EmailNotifications = @EmailNotifications, 
                                 BackupTime = @BackupTime
-                            WHERE Id = @Id;";
+                            WHERE BackupSettingId = @Id;";
                         using (var updateCommand = new SqlCommand(updateSql, connection))
                         {
                             AddParameters(updateCommand, settings);
@@ -123,7 +124,7 @@ namespace HospitalManagementSystem.Views.UserControls
                     {
                         // If no record exists, insert a new one.
                         var insertSql = @"
-                            INSERT INTO BackupSettings (Id, BackupLocation, BackupFrequency, RetentionPeriodDays, EmailNotifications, BackupTime)
+                            INSERT INTO BackupSettings (BackupSettingId, BackupLocation, BackupFrequency, RetentionPeriodDays, EmailNotifications, BackupTime)
                             VALUES (@Id, @BackupLocation, @BackupFrequency, @RetentionPeriodDays, @EmailNotifications, @BackupTime);";
                         using (var insertCommand = new SqlCommand(insertSql, connection))
                         {
@@ -168,7 +169,7 @@ namespace HospitalManagementSystem.Views.UserControls
                         await command.ExecuteNonQueryAsync();
 
                         // Update the Last Backup date in the database after a successful backup.
-                        var updateQuery = "UPDATE BackupSettings SET LastBackupDate = GETDATE() WHERE Id = @Id";
+                        var updateQuery = "UPDATE BackupSettings SET LastBackupDate = GETDATE() WHERE BackupSettingId = @Id";
                         using (var updateCommand = new SqlCommand(updateQuery, connection))
                         {
                             updateCommand.Parameters.AddWithValue("@Id", BackupSettingsRecordId);

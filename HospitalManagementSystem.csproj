@@ -210,6 +210,9 @@
     <Compile Include="Views\UserControls\RoomManagementView.xaml.cs">
       <DependentUpon>RoomManagementView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\UserControls\ShiftManagementView.xaml.cs">
+      <DependentUpon>ShiftManagementView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\UserControls\StaffPerformanceView.xaml.cs">
       <DependentUpon>StaffPerformanceView.xaml</DependentUpon>
     </Compile>
@@ -225,10 +228,10 @@
     <Compile Include="Views\Windows\LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\Windows\UserOnboardingWindow.xaml.cs">
-      <DependentUpon>UserOnboardingWindow.xaml</DependentUpon>
-    </Compile>
     <Page Include="Views\UserControls\PurchaseOrderView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UserControls\ShiftManagementView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Windows\MainWindow.xaml">
@@ -303,9 +306,6 @@
     </Page>
     <Page Include="Views\Windows\LoginWindow.xaml">
       <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\Windows\UserOnboardingWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

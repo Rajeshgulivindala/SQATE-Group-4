@@ -19,6 +19,7 @@ namespace HospitalManagementSystem.Views.UserControls
         /// </summary>
         public class HospitalSettings
         {
+            public int SettingID { get; set; }
             public string HospitalName { get; set; }
             public string Address { get; set; }
             public string ContactPhone { get; set; }
@@ -133,7 +134,7 @@ namespace HospitalManagementSystem.Views.UserControls
                             SET HospitalName = @HospitalName, Address = @Address, ContactPhone = @ContactPhone, 
                                 HospitalEmail = @HospitalEmail, Website = @Website, LicenseNumber = @LicenseNumber, 
                                 DefaultCurrency = @DefaultCurrency, TimeZone = @TimeZone, LogoPath = @LogoPath
-                            WHERE Id = 1;"; // Assumes the single record has Id = 1
+                            WHERE SettingId = 1;"; // Assumes the single record has Id = 1
                         using (SqlCommand updateCommand = new SqlCommand(updateSql, connection))
                         {
                             updateCommand.Parameters.AddWithValue("@HospitalName", settings.HospitalName);
