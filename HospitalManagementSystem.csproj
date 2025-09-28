@@ -167,6 +167,9 @@
     <Compile Include="Views\UserControls\BackupMaintenanceView.xaml.cs">
       <DependentUpon>BackupMaintenanceView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\UserControls\BillingManagementView.xaml.cs">
+      <DependentUpon>BillingManagementView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\UserControls\Converters.cs" />
     <Compile Include="Views\UserControls\DashboardView.xaml.cs">
       <DependentUpon>DashboardView.xaml</DependentUpon>
@@ -228,6 +231,9 @@
     <Compile Include="Views\Windows\LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="Views\UserControls\BillingManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\UserControls\PurchaseOrderView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

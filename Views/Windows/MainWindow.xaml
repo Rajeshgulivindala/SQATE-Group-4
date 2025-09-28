@@ -1,5 +1,5 @@
 ﻿
-<Window x:Class="HospitalManagementSystem.Views.Windows.MainWindow"
+﻿<Window x:Class="HospitalManagementSystem.Views.Windows.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="https://schemas.microsoft.com/expression/blend/2008"
@@ -232,9 +232,22 @@
                         <Button Content="🛒 Purchase Approvals" Style="{StaticResource SubMenuButton}" Tag="purchaseapprovals" Click="NavigationButton_Click"/>
                     </StackPanel>
                 </Expander>
+
+                <Expander x:Name="ClerkExpander"
+            Header="📅Functions"
+         Style="{StaticResource ExpanderHeaderStyle}"
+         IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
+                        <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="Communication" Click="NavigationButton_Click"/>
+                        <Button Content="💰 Billing" Style="{StaticResource SubMenuButton}" Tag="billing" Click="NavigationButton_Click"/>
+                        <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
             </StackPanel>
         </Border>
-
         <!-- Main content area -->
         <Border Grid.Column="1" Background="White" Padding="20">
             <ContentControl x:Name="MainContentArea">

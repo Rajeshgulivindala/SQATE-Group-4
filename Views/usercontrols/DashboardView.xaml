@@ -5,16 +5,49 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Background="#F0F0F0">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="Welcome to the Admin Dashboard" 
-                       FontSize="24" 
+    <Grid Background="#F8F9FA">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Section: Binds to HospitalSettings -->
+        <Border Grid.Row="0" Background="#E9ECEF" Padding="20">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Hospital Logo (Placeholder/Binding) -->
+                <Image x:Name="HospitalLogoImage" 
+                       Width="80" Height="80" 
+                       Margin="0,0,20,0" 
+                       Source="{Binding HospitalSettings.LogoPath}"
+                       VerticalAlignment="Top"/>
+
+                <StackPanel VerticalAlignment="Center">
+                    <!-- Hospital Name (Real-Time Binding) -->
+                    <TextBlock Text="{Binding HospitalSettings.Name}" 
+                               FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="#2C3E50"/>
+
+                    <!-- Hospital Address (Real-Time Binding) -->
+                    <TextBlock Text="{Binding HospitalSettings.Address}" 
+                               FontSize="14" 
+                               Foreground="#7F8C8D"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Dashboard Content (Welcome Message) -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,0">
+            <TextBlock Text="Welcome to the Hospital Dashboard" 
+                       FontSize="36" 
                        FontWeight="Bold" 
-                       Margin="0,0,0,10"/>
-            <TextBlock Text="Use the navigation menu on the left to manage the system."
-                       FontSize="14" 
-                       Foreground="#666666"
-                       TextAlignment="Center"/>
+                       Foreground="#2C3E50" 
+                       Margin="0,0,0,10" 
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Hospital Name." 
+                       FontSize="18" 
+                       Foreground="#7F8C8D" 
+                       HorizontalAlignment="Center"/>
         </StackPanel>
     </Grid>
 </UserControl>
