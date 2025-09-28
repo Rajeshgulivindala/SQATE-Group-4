@@ -106,6 +106,10 @@ namespace HospitalManagementSystem.Views.Windows
                                 // Nurse role opens the dedicated Nurse dashboard
                                 targetWindow = new MainWindow();
                                 break;
+                            case "Clerk":
+                                // Nurse role opens the dedicated Nurse dashboard
+                                targetWindow = new MainWindow();
+                                break;
                             default:
                                 // Handle unknown roles gracefully
                                 ErrorMessageText.Text = $"Unknown role assigned: {user.Role}. Access denied.";
