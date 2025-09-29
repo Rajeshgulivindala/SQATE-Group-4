@@ -25,7 +25,7 @@ namespace HospitalManagementSystem.Views.Windows
             string userRole = AuthenticationService.CurrentUser?.Role;
 
             // Administrative features that only the Admin should see
-            if (userRole == "Doctor" || userRole == "Nurse" || userRole == "CLerk")
+            if (userRole == "Doctor" || userRole == "Nurse" || userRole == "Clerk")
             {
                 // Hide User Management
                 UserExpander.Visibility = Visibility.Collapsed;
@@ -37,35 +37,40 @@ namespace HospitalManagementSystem.Views.Windows
                 // Example: Hide Inventory Management for a Doctor
                 if (userRole == "Doctor")
                 {
+                    DoctorExpander.Visibility = Visibility.Visible;
                     NurseExpander.Visibility = Visibility.Collapsed;
                     InventoryExpander.Visibility = Visibility.Collapsed;
                     ReportsExpander.Visibility = Visibility.Collapsed;
+                    ClerkExpander.Visibility = Visibility.Collapsed;
                 }
-            }
 
-            // Specific UI visibility for Doctor
-            if (userRole == "Doctor")
-            {
-                // Ensure Doctor Dashboard is visible (it's the only one left after Admin parts are hidden)
-                DoctorExpander.Visibility = Visibility.Visible;
+
+                // Specific UI visibility for Doctor
+
+                if (userRole == "Nurse")
+                {
+                    ReportsExpander.Visibility = Visibility.Collapsed;
+                    DoctorExpander.Visibility = Visibility.Collapsed;
+                    ClerkExpander.Visibility = Visibility.Collapsed;
+                }
+                if (userRole == "Clerk")
+                {
+                    ClerkExpander.Visibility = Visibility.Visible;
+                    InventoryExpander.Visibility = Visibility.Collapsed;
+                    NurseExpander.Visibility = Visibility.Collapsed;
+                    DoctorExpander.Visibility = Visibility.Collapsed;
+                    ReportsExpander.Visibility = Visibility.Collapsed;
+                }
             }
             else
             {
                 // If the user is Admin or Nurse, hide the Doctor-specific dashboard
-                if (userRole == "Nurse")
-                    ReportsExpander.Visibility = Visibility.Collapsed;
-                DoctorExpander.Visibility = Visibility.Collapsed;
+
                 if (userRole == "Admin")
                     NurseExpander.Visibility = Visibility.Collapsed;
                 DoctorExpander.Visibility = Visibility.Collapsed;
-                if (userRole == "Clerk")
-                    ClerkExpander.Visibility = Visibility.Visible;
-                InventoryExpander.Visibility = Visibility.Collapsed;
-                UserExpander.Visibility = Visibility.Collapsed;
-                SystemExpander.Visibility = Visibility.Collapsed;
-                NurseExpander.Visibility = Visibility.Collapsed;
-                DoctorExpander.Visibility = Visibility.Collapsed;
-                ReportsExpander.Visibility = Visibility.Collapsed;
+                ClerkExpander.Visibility = Visibility.Collapsed;
+
             }
 
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,12 +13,9 @@ namespace HospitalManagementSystem.Views.UserControls
     /// </summary>
     public partial class RoomManagementView : UserControl
     {
-        // TODO: **CRITICAL: Replace this with your actual database connection string.**
-        private readonly string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
+        private readonly string connectionString =
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
 
-        /// <summary>
-        /// A data model for a room.
-        /// </summary>
         public class Room
         {
             public int RoomID { get; set; }
@@ -34,204 +31,322 @@ namespace HospitalManagementSystem.Views.UserControls
             public DateTime CreatedDate { get; set; }
         }
 
-        // An ObservableCollection for the rooms, which automatically updates the UI.
-        public ObservableCollection<Room> Rooms { get; set; }
+        public ObservableCollection<Room> Rooms { get; set; } = new ObservableCollection<Room>();
 
         public RoomManagementView()
         {
             InitializeComponent();
-            Rooms = new ObservableCollection<Room>();
-
-            // Set the DataContext to this instance to enable XAML binding.
-            this.DataContext = this;
-
-            // Load rooms when the view is initialized.
-            LoadRoomsFromDatabase();
+            DataContext = this;
+            Loaded += async (_, __) => await LoadRoomsFromDatabase();
         }
 
-        /// <summary>
-        /// Loads room data from the database.
-        /// </summary>
-        private async void LoadRoomsFromDatabase()
+        // ---------- Load ----------
+        private async Task LoadRoomsFromDatabase()
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    string sqlQuery = "SELECT RoomID, DepartmentID, RoomNumber, RoomType, Capacity, Equipment, Status, Floor, Description, IsActive, CreatedDate FROM Rooms";
-                    using (SqlCommand command = new SqlCommand(sqlQuery, connection))
+                    const string sqlQuery = @"
+SELECT RoomID, DepartmentID, RoomNumber, RoomType, Capacity, Equipment, Status, Floor, Description, IsActive, CreatedDate
+FROM Rooms
+ORDER BY RoomNumber;";
+
+                    using (var command = new SqlCommand(sqlQuery, connection))
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                        Rooms.Clear();
+
+                        while (await reader.ReadAsync())
                         {
-                            Rooms.Clear();
-                            while (await reader.ReadAsync())
+                            var room = new Room
                             {
-                                var room = new Room
-                                {
-                                    RoomID = reader.GetInt32(0),
-                                    DepartmentID = reader.GetInt32(1),
-                                    RoomNumber = reader.GetString(2),
-                                    RoomType = reader.GetString(3),
-                                    Capacity = reader.GetInt32(4),
-                                    Equipment = reader.GetString(5),
-                                    Status = reader.GetString(6),
-                                    Floor = reader.GetInt32(7),
-                                    Description = reader.GetString(8),
-                                    IsActive = reader.GetBoolean(9),
-                                    CreatedDate = reader.GetDateTime(10)
-                                };
-                                Rooms.Add(room);
-                            }
+                                RoomID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                                DepartmentID = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                                RoomNumber = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                RoomType = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                                Capacity = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                                Equipment = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                                Status = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                                Floor = reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                                Description = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                                IsActive = !reader.IsDBNull(9) && reader.GetBoolean(9),
+                                CreatedDate = reader.IsDBNull(10) ? DateTime.MinValue : reader.GetDateTime(10)
+                            };
+                            Rooms.Add(room);
                         }
                     }
                 }
             }
             catch (SqlException ex)
             {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Database error: " + ex.Message, "Database Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load rooms: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Failed to load rooms: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles the click event for the "Add Room" button.
-        /// </summary>
+        // ---------- Add ----------
         private async void btnAddRoom_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Add input validation
-            var newRoom = new Room
+            try
             {
-                // RoomID is typically auto-generated by the database
-                DepartmentID = int.Parse(txtDepartmentID.Text),
-                RoomNumber = txtRoomNumber.Text,
-                RoomType = cmbRoomType.Text,
-                Capacity = int.Parse(txtCapacity.Text),
-                Equipment = txtEquipment.Text,
-                Status = txtStatus.Text,
-                Floor = int.Parse(txtFloor.Text),
-                Description = txtDescription.Text,
-                IsActive = chkIsActive.IsChecked ?? false,
-                CreatedDate = DateTime.Now
-            };
+                // Read + validate inputs
+                string deptText = (txtDepartmentID.Text ?? "").Trim();
+                string roomNo = (txtRoomNumber.Text ?? "").Trim();
+                string roomType = (cmbRoomType.Text ?? "").Trim();
+                string capText = (txtCapacity.Text ?? "").Trim();
+                string equipment = (txtEquipment.Text ?? "").Trim();
+                string status = (txtStatus.Text ?? "").Trim();
+                string floorText = (txtFloor.Text ?? "").Trim();
+                string descr = (txtDescription.Text ?? "").Trim();
+                bool isActive = chkIsActive.IsChecked ?? false;
+
+                if (string.IsNullOrWhiteSpace(roomNo))
+                {
+                    MessageBox.Show("Room Number is required.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtRoomNumber.Focus(); return;
+                }
+                if (string.IsNullOrWhiteSpace(roomType))
+                {
+                    MessageBox.Show("Room Type is required.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    cmbRoomType.Focus(); return;
+                }
+
+                int departmentId;
+                if (!int.TryParse(deptText, NumberStyles.Integer, CultureInfo.InvariantCulture, out departmentId))
+                {
+                    MessageBox.Show("Department ID must be a whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtDepartmentID.Focus(); return;
+                }
+
+                int capacity;
+                if (!int.TryParse(capText, NumberStyles.Integer, CultureInfo.InvariantCulture, out capacity) || capacity < 0)
+                {
+                    MessageBox.Show("Capacity must be a non-negative whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtCapacity.Focus(); return;
+                }
+
+                int floor;
+                if (!int.TryParse(floorText, NumberStyles.Integer, CultureInfo.InvariantCulture, out floor))
+                {
+                    MessageBox.Show("Floor must be a whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtFloor.Focus(); return;
+                }
+
+                var newRoom = new Room
+                {
+                    DepartmentID = departmentId,
+                    RoomNumber = roomNo,
+                    RoomType = roomType,
+                    Capacity = capacity,
+                    Equipment = equipment,
+                    Status = status,
+                    Floor = floor,
+                    Description = descr,
+                    IsActive = isActive,
+                    CreatedDate = DateTime.Now
+                };
+
+                // Insert and get new RoomID
+                int newId = await AddRoomToDatabase(newRoom);
+                if (newId <= 0)
+                {
+                    MessageBox.Show("Insert failed (no ID returned).", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                newRoom.RoomID = newId;
+                Rooms.Add(newRoom);
+
+                MessageBox.Show("Room '" + newRoom.RoomNumber + "' added successfully.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                ClearInputs();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error adding room: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ---------- Update ----------
+        private async void btnUpdateRoom_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = RoomsDataGrid.SelectedItem as Room;
+            if (selected == null)
+            {
+                MessageBox.Show("Please select a room to update.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             try
             {
-                await AddRoomToDatabase(newRoom);
-                Rooms.Add(newRoom); // Add to ObservableCollection for UI update
-                MessageBox.Show($"Room '{newRoom.RoomNumber}' added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Validate and apply edits from inputs
+                int departmentId, capacity, floor;
+
+                if (!int.TryParse((txtDepartmentID.Text ?? "").Trim(), out departmentId))
+                {
+                    MessageBox.Show("Department ID must be a whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning); return;
+                }
+                if (!int.TryParse((txtCapacity.Text ?? "").Trim(), out capacity) || capacity < 0)
+                {
+                    MessageBox.Show("Capacity must be a non-negative whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning); return;
+                }
+                if (!int.TryParse((txtFloor.Text ?? "").Trim(), out floor))
+                {
+                    MessageBox.Show("Floor must be a whole number.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning); return;
+                }
+
+                string roomNo = (txtRoomNumber.Text ?? "").Trim();
+                string roomType = (cmbRoomType.Text ?? "").Trim();
+
+                if (string.IsNullOrWhiteSpace(roomNo))
+                {
+                    MessageBox.Show("Room Number is required.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning); return;
+                }
+                if (string.IsNullOrWhiteSpace(roomType))
+                {
+                    MessageBox.Show("Room Type is required.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning); return;
+                }
+
+                selected.DepartmentID = departmentId;
+                selected.RoomNumber = roomNo;
+                selected.RoomType = roomType;
+                selected.Capacity = capacity;
+                selected.Equipment = (txtEquipment.Text ?? "").Trim();
+                selected.Status = (txtStatus.Text ?? "").Trim();
+                selected.Floor = floor;
+                selected.Description = (txtDescription.Text ?? "").Trim();
+                selected.IsActive = chkIsActive.IsChecked ?? false;
+
+                await UpdateRoomInDatabase(selected);
+
+                MessageBox.Show("Room '" + selected.RoomNumber + "' has been updated.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while adding the room: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Error updating room: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles the click event for the "Update Room" button.
-        /// </summary>
-        private async void btnUpdateRoom_Click(object sender, RoutedEventArgs e)
-        {
-            if (RoomsDataGrid.SelectedItem is Room selectedRoom)
-            {
-                // TODO: Update the selectedRoom object with values from your UI controls.
-                selectedRoom.RoomNumber = txtRoomNumber.Text;
-                selectedRoom.RoomType = cmbRoomType.Text;
-                selectedRoom.Capacity = int.Parse(txtCapacity.Text);
-                selectedRoom.Equipment = txtEquipment.Text;
-                selectedRoom.Status = txtStatus.Text;
-                selectedRoom.Floor = int.Parse(txtFloor.Text);
-                selectedRoom.Description = txtDescription.Text;
-                selectedRoom.IsActive = chkIsActive.IsChecked ?? false;
-
-                try
-                {
-                    await UpdateRoomInDatabase(selectedRoom);
-                    MessageBox.Show($"Room '{selectedRoom.RoomNumber}' has been updated.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"An error occurred while updating the room: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a room to update.", "No Room Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        /// <summary>
-        /// Handles the click event for the "Delete Room" button.
-        /// </summary>
+        // ---------- Delete ----------
         private async void btnDeleteRoom_Click(object sender, RoutedEventArgs e)
         {
-            if (RoomsDataGrid.SelectedItem is Room selectedRoom)
+            var selected = RoomsDataGrid.SelectedItem as Room;
+            if (selected == null)
             {
-                try
-                {
-                    await DeleteRoomFromDatabase(selectedRoom);
-                    Rooms.Remove(selectedRoom);
-                    MessageBox.Show($"Room '{selectedRoom.RoomNumber}' has been deleted.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"An error occurred while deleting the room: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                MessageBox.Show("Please select a room to delete.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-            else
+
+            var confirm = MessageBox.Show(
+                "Delete room '" + selected.RoomNumber + "' (ID " + selected.RoomID + ")?",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            try
             {
-                MessageBox.Show("Please select a room to delete.", "No Room Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await DeleteRoomFromDatabase(selected.RoomID);
+                Rooms.Remove(selected);
+
+                MessageBox.Show("Room '" + selected.RoomNumber + "' has been deleted.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ClearInputs();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting room: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Adds a room to the database.
-        /// </summary>
-        private async Task AddRoomToDatabase(Room room)
+        private void ClearInputs()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            txtDepartmentID.Clear();
+            txtRoomNumber.Clear();
+            cmbRoomType.SelectedIndex = -1;
+            txtCapacity.Clear();
+            txtEquipment.Clear();
+            txtStatus.Clear();
+            txtFloor.Clear();
+            txtDescription.Clear();
+            chkIsActive.IsChecked = false;
+            RoomsDataGrid.SelectedItem = null;
+        }
+
+        // ---------- SQL helpers ----------
+        private async Task<int> AddRoomToDatabase(Room room)
+        {
+            using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                string sql = "INSERT INTO Rooms (DepartmentID, RoomNumber, RoomType, Capacity, Equipment, Status, Floor, Description, IsActive, CreatedDate) VALUES (@DepartmentID, @RoomNumber, @RoomType, @Capacity, @Equipment, @Status, @Floor, @Description, @IsActive, @CreatedDate)";
-                using (SqlCommand command = new SqlCommand(sql, connection))
+                const string sql = @"
+INSERT INTO Rooms (DepartmentID, RoomNumber, RoomType, Capacity, Equipment, Status, Floor, Description, IsActive, CreatedDate)
+VALUES (@DepartmentID, @RoomNumber, @RoomType, @Capacity, @Equipment, @Status, @Floor, @Description, @IsActive, @CreatedDate);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+                using (var command = new SqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@DepartmentID", room.DepartmentID);
-                    command.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
-                    command.Parameters.AddWithValue("@RoomType", room.RoomType);
+                    command.Parameters.AddWithValue("@RoomNumber", room.RoomNumber ?? "");
+                    command.Parameters.AddWithValue("@RoomType", room.RoomType ?? "");
                     command.Parameters.AddWithValue("@Capacity", room.Capacity);
-                    command.Parameters.AddWithValue("@Equipment", room.Equipment);
-                    command.Parameters.AddWithValue("@Status", room.Status);
+                    command.Parameters.AddWithValue("@Equipment", (object)(room.Equipment ?? "") ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Status", (object)(room.Status ?? "") ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Floor", room.Floor);
-                    command.Parameters.AddWithValue("@Description", room.Description);
+                    command.Parameters.AddWithValue("@Description", (object)(room.Description ?? "") ?? DBNull.Value);
                     command.Parameters.AddWithValue("@IsActive", room.IsActive);
                     command.Parameters.AddWithValue("@CreatedDate", room.CreatedDate);
-                    await command.ExecuteNonQueryAsync();
+
+                    object o = await command.ExecuteScalarAsync();
+                    return (o == null || o == DBNull.Value) ? 0 : Convert.ToInt32(o);
                 }
             }
         }
 
-        /// <summary>
-        /// Updates a room in the database.
-        /// </summary>
         private async Task UpdateRoomInDatabase(Room room)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                string sql = "UPDATE Rooms SET DepartmentID = @DepartmentID, RoomNumber = @RoomNumber, RoomType = @RoomType, Capacity = @Capacity, Equipment = @Equipment, Status = @Status, Floor = @Floor, Description = @Description, IsActive = @IsActive WHERE RoomID = @RoomID";
-                using (SqlCommand command = new SqlCommand(sql, connection))
+                const string sql = @"
+UPDATE Rooms
+SET DepartmentID=@DepartmentID, RoomNumber=@RoomNumber, RoomType=@RoomType,
+    Capacity=@Capacity, Equipment=@Equipment, Status=@Status, Floor=@Floor,
+    Description=@Description, IsActive=@IsActive
+WHERE RoomID=@RoomID;";
+                using (var command = new SqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@DepartmentID", room.DepartmentID);
-                    command.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
-                    command.Parameters.AddWithValue("@RoomType", room.RoomType);
+                    command.Parameters.AddWithValue("@RoomNumber", room.RoomNumber ?? "");
+                    command.Parameters.AddWithValue("@RoomType", room.RoomType ?? "");
                     command.Parameters.AddWithValue("@Capacity", room.Capacity);
-                    command.Parameters.AddWithValue("@Equipment", room.Equipment);
-                    command.Parameters.AddWithValue("@Status", room.Status);
+                    command.Parameters.AddWithValue("@Equipment", (object)(room.Equipment ?? "") ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Status", (object)(room.Status ?? "") ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Floor", room.Floor);
-                    command.Parameters.AddWithValue("@Description", room.Description);
+                    command.Parameters.AddWithValue("@Description", (object)(room.Description ?? "") ?? DBNull.Value);
                     command.Parameters.AddWithValue("@IsActive", room.IsActive);
                     command.Parameters.AddWithValue("@RoomID", room.RoomID);
                     await command.ExecuteNonQueryAsync();
@@ -239,18 +354,15 @@ namespace HospitalManagementSystem.Views.UserControls
             }
         }
 
-        /// <summary>
-        /// Deletes a room from the database.
-        /// </summary>
-        private async Task DeleteRoomFromDatabase(Room room)
+        private async Task DeleteRoomFromDatabase(int roomId)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                string sql = "DELETE FROM Rooms WHERE RoomID = @RoomID";
-                using (SqlCommand command = new SqlCommand(sql, connection))
+                const string sql = "DELETE FROM Rooms WHERE RoomID=@RoomID;";
+                using (var command = new SqlCommand(sql, connection))
                 {
-                    command.Parameters.AddWithValue("@RoomID", room.RoomID);
+                    command.Parameters.AddWithValue("@RoomID", roomId);
                     await command.ExecuteNonQueryAsync();
                 }
             }
