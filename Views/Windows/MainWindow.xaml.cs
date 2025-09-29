@@ -185,6 +185,19 @@ namespace HospitalManagementSystem.Views.Windows
                 }
             }
         }
+        private void LogoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Clear current user session if needed
+            AuthenticationService.CurrentUser = null;
+
+            // Show the Login window again
+            var loginWindow = new LoginWindow();
+            loginWindow.Show();
+
+            // Close the current MainWindow
+            this.Close();
+        }
+
 
         // You would typically include a Logout button handler here as well
         // private void LogoutButton_Click(object sender, RoutedEventArgs e) { ... }

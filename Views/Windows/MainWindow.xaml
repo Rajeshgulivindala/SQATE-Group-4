@@ -169,7 +169,7 @@
 
                 <!-- System Configuration -->
                 <Expander x:Name="SystemExpander"
-                          Header="⚙️ System Configuration"
+                          Header="⚙ System Configuration"
                           Style="{StaticResource ExpanderHeaderStyle}"
                           IsExpanded="False">
                     <StackPanel>
@@ -188,8 +188,8 @@
                     <StackPanel>
                         <Button Content="🖥 System Usage" Style="{StaticResource SubMenuButton}" Tag="systemusage" Click="NavigationButton_Click"/>
                         <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
-                        <Button Content="👩‍⚕️ Staff Performance" Style="{StaticResource SubMenuButton}" Tag="staffperformance" Click="NavigationButton_Click"/>
-                        <Button Content="🕵️ Audit Logs" Style="{StaticResource SubMenuButton}" Tag="auditlogs" Click="NavigationButton_Click"/>
+                        <Button Content="👩‍⚕ Staff Performance" Style="{StaticResource SubMenuButton}" Tag="staffperformance" Click="NavigationButton_Click"/>
+                        <Button Content="🕵 Audit Logs" Style="{StaticResource SubMenuButton}" Tag="auditlogs" Click="NavigationButton_Click"/>
                     </StackPanel>
                 </Expander>
 
@@ -201,7 +201,7 @@
                           Style="{StaticResource ExpanderHeaderStyle}"
                           IsExpanded="False">
                     <StackPanel>
-                        <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
                         <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
                         <Button Content="📂 Medical Records" Style="{StaticResource SubMenuButton}" Tag="medicalrecords" Click="NavigationButton_Click"/>
                     </StackPanel>
@@ -213,7 +213,7 @@
            Style="{StaticResource ExpanderHeaderStyle}"
           IsExpanded="False">
                     <StackPanel>
-                        <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
                         <Button Content="📅 Shift Management" Style="{StaticResource SubMenuButton}" Tag="shiftmanagement" Click="NavigationButton_Click"/>
 
                         <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="Communication" Click="NavigationButton_Click"/>
@@ -237,7 +237,7 @@
          Style="{StaticResource ExpanderHeaderStyle}"
          IsExpanded="False">
                     <StackPanel>
-                        <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
                         <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
                         <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
                         <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="Communication" Click="NavigationButton_Click"/>
@@ -245,6 +245,11 @@
                         <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
                     </StackPanel>
                 </Expander>
+                <Button Content="⬅ Logout"
+        Style="{StaticResource NavigationButton}"
+        Click="LogoutButton_Click"
+        Margin="0,20,0,0"/>
+
             </StackPanel>
         </Border>
         <!-- Main content area -->
@@ -257,4 +262,5 @@
             </ContentControl>
         </Border>
     </Grid>
+
 </Window>
