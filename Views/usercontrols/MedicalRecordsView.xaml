@@ -6,8 +6,9 @@
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1000">
 
-    <!-- Define the missing DataGridStyle resource locally -->
+    <!-- Styles -->
     <UserControl.Resources>
+        <!-- DataGrid look -->
         <Style x:Key="DataGridStyle" TargetType="{x:Type DataGrid}">
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#EAECEE"/>
@@ -28,12 +29,16 @@
             </Setter>
         </Style>
 
-        <!-- Define a basic ButtonStyle to ensure Toolbar.ButtonStyleKey resolves (if not defined globally) -->
+        <!-- Toolbar button style (simple, local) -->
         <Style x:Key="{x:Static ToolBar.ButtonStyleKey}" TargetType="{x:Type Button}">
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="2"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2980B9"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
@@ -52,19 +57,16 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
     </UserControl.Resources>
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <!-- Column 0: List of Records (READ) -->
             <ColumnDefinition Width="3.5*"/>
-            <!-- Column 1: Record Details and CRUD actions -->
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="2.5*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Main Title -->
+        <!-- Title -->
         <TextBlock Text="📂 Medical Records Management"
                    FontSize="24"
                    FontWeight="SemiBold"
@@ -72,7 +74,7 @@
                    Grid.ColumnSpan="3"
                    Margin="0,0,0,10"/>
 
-        <!-- Records List Grid -->
+        <!-- Records list -->
         <StackPanel Grid.Column="0" Margin="0,50,10,0">
             <TextBlock Text="Recent Patient Visits"
                        FontSize="16"
@@ -88,16 +90,18 @@
                       SelectionChanged="RecordsDataGrid_SelectionChanged"
                       ItemsSource="{Binding RecordsList}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="ID" Binding="{Binding RecordID}" Width="50"/>
-                    <DataGridTextColumn Header="Patient ID" Binding="{Binding PatientID}" Width="80"/>
-                    <DataGridTextColumn Header="Visit Date" Binding="{Binding VisitDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding RecordID}" Width="80"/>
+                    <DataGridTextColumn Header="Patient ID" Binding="{Binding PatientID}" Width="120"/>
+                    <DataGridTextColumn Header="Visit Date"
+                                        Binding="{Binding VisitDate, StringFormat='{}{0:yyyy-MM-dd}'}"
+                                        Width="*"/>
                     <DataGridTextColumn Header="Chief Complaint" Binding="{Binding ChiefComplaint}" Width="2*"/>
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </StackPanel>
 
-        <!-- Grid Splitter -->
+        <!-- Splitter -->
         <GridSplitter Grid.Column="1"
                       Width="5"
                       HorizontalAlignment="Center"
@@ -105,8 +109,7 @@
                       Background="#E0E0E0"
                       Margin="5,50,5,0"/>
 
-
-        <!-- Record Details Panel -->
+        <!-- Details / form -->
         <ScrollViewer Grid.Column="2" Margin="10,50,0,0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
@@ -116,13 +119,13 @@
                            Foreground="#2C3E50"
                            Margin="0,0,0,15"/>
 
-                <!-- Read-Only Fields -->
+                <!-- Read-only ID -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock Text="Record ID: " FontWeight="SemiBold" Width="100"/>
-                    <TextBlock x:Name="RecordIdTextBlock" Text="{Binding RecordID}" Width="150" Foreground="#7F8C8D"/>
+                    <TextBlock x:Name="RecordIdTextBlock" Text="{Binding RecordID}" Width="200" Foreground="#7F8C8D"/>
                 </StackPanel>
 
-                <!-- Identifiers -->
+                <!-- Patient/Staff IDs (DROPDOWNS) -->
                 <TextBlock Text="Patient/Staff IDs" FontWeight="SemiBold" Margin="0,5,0,5"/>
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
@@ -130,19 +133,29 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox x:Name="PatientIdTextBox"
-                             Grid.Column="0"
-                             Text="{Binding PatientID}"
-                             d:Text="P1001"
-                             ToolTip="Patient ID"
-                             Margin="0,0,5,0"/>
+                    <!-- Patient ID dropdown -->
+                    <ComboBox x:Name="cmbPatientId"
+                              Grid.Column="0"
+                              Margin="0,0,5,0"
+                              IsEditable="False"
+                              IsTextSearchEnabled="True"
+                              ItemsSource="{Binding PatientOptions}"
+                              DisplayMemberPath="Display"
+                              SelectedValuePath="Id"
+                              SelectedValue="{Binding PatientID, Mode=TwoWay}"
+                              ToolTip="Select Patient ID"/>
 
-                    <TextBox x:Name="StaffIdTextBox"
-                             Grid.Column="1"
-                             Text="{Binding StaffID}"
-                             d:Text="S205"
-                             ToolTip="Staff ID (Doctor)"
-                             Margin="5,0,0,0"/>
+                    <!-- Staff ID dropdown -->
+                    <ComboBox x:Name="cmbStaffId"
+                              Grid.Column="1"
+                              Margin="5,0,0,0"
+                              IsEditable="False"
+                              IsTextSearchEnabled="True"
+                              ItemsSource="{Binding StaffOptions}"
+                              DisplayMemberPath="Display"
+                              SelectedValuePath="Id"
+                              SelectedValue="{Binding StaffID, Mode=TwoWay}"
+                              ToolTip="Select Staff/Doctor ID"/>
                 </Grid>
 
                 <!-- Dates -->
@@ -153,109 +166,109 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <DatePicker x:Name="VisitDatePicker"
+                    <DatePicker x:Name="dpVisitDate"
                                 Grid.Column="0"
-                                SelectedDate="{Binding VisitDate}"
+                                SelectedDate="{Binding VisitDate, Mode=TwoWay}"
                                 Margin="0,0,5,0"/>
 
-                    <DatePicker x:Name="FollowUpDatePicker"
+                    <DatePicker x:Name="dpFollowUpDate"
                                 Grid.Column="1"
-                                SelectedDate="{Binding FollowUpDate}"
+                                SelectedDate="{Binding FollowUpDate, Mode=TwoWay}"
                                 ToolTip="Optional Follow-up Date"
                                 Margin="5,0,0,0"/>
                 </Grid>
 
                 <!-- Vital Signs -->
                 <TextBlock Text="Vital Signs" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="VitalSignsTextBox"
-                         Text="{Binding VitalSigns}"
+                <TextBox x:Name="txtVitalSigns"
+                         Text="{Binding VitalSigns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="50"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="BP: 120/80, Temp: 98.6°F, HR: 72 bpm"
                          Margin="0,0,0,10"/>
 
                 <!-- Chief Complaint -->
                 <TextBlock Text="Chief Complaint" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="ChiefComplaintTextBox"
-                         Text="{Binding ChiefComplaint}"
+                <TextBox x:Name="txtChiefComplaint"
+                         Text="{Binding ChiefComplaint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="70"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="Severe headache lasting 3 days, non-responsive to OTC pain medication."
                          Margin="0,0,0,10"/>
 
                 <!-- Diagnosis -->
                 <TextBlock Text="Diagnosis" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="DiagnosisTextBox"
-                         Text="{Binding Diagnosis}"
+                <TextBox x:Name="txtDiagnosis"
+                         Text="{Binding Diagnosis, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="70"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="Tension-type headache, likely stress-related."
                          Margin="0,0,0,10"/>
 
                 <!-- Treatment -->
                 <TextBlock Text="Treatment" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="TreatmentTextBox"
-                         Text="{Binding Treatment}"
+                <TextBox x:Name="txtTreatment"
+                         Text="{Binding Treatment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="70"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="Recommended rest, hydration, and prescribed muscle relaxant."
                          Margin="0,0,0,10"/>
 
                 <!-- Prescription -->
                 <TextBlock Text="Prescription" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="PrescriptionTextBox"
-                         Text="{Binding Prescription}"
+                <TextBox x:Name="txtPrescription"
+                         Text="{Binding Prescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="70"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="Cyclobenzaprine 5mg (1 tab QHS prn tension), #15."
                          Margin="0,0,0,10"/>
 
                 <!-- Notes -->
                 <TextBlock Text="Notes" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                <TextBox x:Name="NotesTextBox"
-                         Text="{Binding Notes}"
+                <TextBox x:Name="txtNotes"
+                         Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="Wrap"
                          Height="100"
                          VerticalScrollBarVisibility="Auto"
-                         d:Text="Patient educated on stress reduction techniques and signs of severe headache requiring immediate attention."
                          Margin="0,0,0,10"/>
 
                 <!-- Status -->
                 <TextBlock Text="Status" FontWeight="SemiBold" Margin="0,5,0,5"/>
                 <ComboBox x:Name="StatusComboBox"
-                          SelectedValue="{Binding Status}"
+                          SelectedValue="{Binding Status, Mode=TwoWay}"
                           Margin="0,0,0,10">
                     <ComboBoxItem Content="Open"/>
+                    <ComboBoxItem Content="Pending"/>
                     <ComboBoxItem Content="Closed"/>
-                    <ComboBoxItem Content="Pending Review"/>
+                    <ComboBoxItem Content="Cancelled"/>
                 </ComboBox>
 
-                <!-- Audit/Metadata (Read-Only) -->
+                <!-- Audit -->
                 <GroupBox Header="Audit Information" Margin="0,10,0,10" Padding="10">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="Created: " FontWeight="Normal" Width="70"/>
-                            <TextBlock x:Name="CreatedDateTextBlock" Text="{Binding CreatedDate}" Foreground="#7F8C8D"/>
+                            <TextBlock x:Name="CreatedDateTextBlock"
+                                       Text="{Binding CreatedDate}"
+                                       Foreground="#7F8C8D"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="Updated: " FontWeight="Normal" Width="70"/>
-                            <TextBlock x:Name="UpdatedDateTextBlock" Text="{Binding UpdatedDate}" Foreground="#7F8C8D"/>
+                            <TextBlock x:Name="UpdatedDateTextBlock"
+                                       Text="{Binding UpdatedDate}"
+                                       Foreground="#7F8C8D"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="By: " FontWeight="Normal" Width="70"/>
-                            <TextBlock x:Name="UpdatedByTextBlock" Text="{Binding UpdatedBy}" Foreground="#7F8C8D"/>
+                            <TextBlock x:Name="UpdatedByTextBlock"
+                                       Text="{Binding UpdatedBy}"
+                                       Foreground="#7F8C8D"/>
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
 
-                <!-- CRUD Actions -->
+                <!-- Actions -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-
                     <Button Content="➕ New/Clear"
                             x:Name="NewRecordButton"
                             Click="NewRecordButton_Click"

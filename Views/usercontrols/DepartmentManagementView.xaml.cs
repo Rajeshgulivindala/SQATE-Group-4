@@ -2,9 +2,12 @@
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace HospitalManagementSystem.Views.UserControls
 {
@@ -13,9 +16,16 @@ namespace HospitalManagementSystem.Views.UserControls
     /// </summary>
     public partial class DepartmentManagementView : UserControl
     {
-        // Adjust the connection string to your setup if needed
         private readonly string _connectionString =
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
+
+        // ---- Validation limits / patterns ----
+        private const int NameMinLen = 2;
+        private const int NameMaxLen = 100;
+        private const int LocationMinLen = 2;
+        private const int LocationMaxLen = 100;
+        private const int DescriptionMaxLen = 1000;
+        private static readonly Regex PhoneRegex = new Regex(@"^\+?[0-9()\-\s]{7,20}$", RegexOptions.Compiled);
 
         public class Department
         {
@@ -24,7 +34,7 @@ namespace HospitalManagementSystem.Views.UserControls
             public string Description { get; set; }
             public string Location { get; set; }
             public string Phone { get; set; }
-            public int HeadOfDept { get; set; }   // store staff/employee ID
+            public int HeadOfDept { get; set; }   // staff/employee ID
             public decimal Budget { get; set; }
             public bool IsActive { get; set; }
         }
@@ -37,7 +47,8 @@ namespace HospitalManagementSystem.Views.UserControls
             DataContext = this;
 
             DepartmentsDataGrid.SelectionChanged += DepartmentsDataGrid_SelectionChanged;
-            Loaded += async (_, __) => await LoadDepartmentsFromDatabase();
+            // Avoid newer discard lambda syntax for max compatibility
+            Loaded += async (s, e) => await LoadDepartmentsFromDatabase();
         }
 
         // --- Populate inputs when row selected ---
@@ -53,6 +64,8 @@ namespace HospitalManagementSystem.Views.UserControls
                 txtHeadOfDept.Text = d.HeadOfDept.ToString(CultureInfo.InvariantCulture);
                 txtBudget.Text = d.Budget.ToString(CultureInfo.InvariantCulture);
                 chkIsActive.IsChecked = d.IsActive;
+
+                ClearValidation();
             }
         }
 
@@ -98,9 +111,40 @@ ORDER BY Name;";
             }
         }
 
-        // --- Helper to read inputs ---
+        // === VALIDATION HELPERS =======================================================
+
+        private void ClearValidation()
+        {
+            MarkValid(txtName);
+            MarkValid(txtDescription);
+            MarkValid(txtLocation);
+            MarkValid(txtPhone);
+            MarkValid(txtHeadOfDept);
+            MarkValid(txtBudget);
+        }
+
+        private static void MarkInvalid(Control c, string msg)
+        {
+            if (c == null) return;
+            c.BorderBrush = Brushes.Red;
+            c.BorderThickness = new Thickness(1.5);
+            c.ToolTip = msg;
+        }
+
+        private static void MarkValid(Control c)
+        {
+            if (c == null) return;
+            c.ClearValue(Border.BorderBrushProperty);
+            c.ClearValue(Border.BorderThicknessProperty);
+            c.ToolTip = null;
+        }
+
+        /// <summary>
+        /// Read inputs and validate every required field. If valid, outputs a Department.
+        /// </summary>
         private bool TryReadInputs(out Department dept, bool requireExisting)
         {
+            ClearValidation();
             dept = null;
             int deptId = 0;
 
@@ -116,44 +160,111 @@ ORDER BY Name;";
                 deptId = sel.DepartmentId;
             }
 
-            string name = txtName.Text?.Trim();
-            string description = txtDescription.Text?.Trim();
-            string location = txtLocation.Text?.Trim();
-            string phone = txtPhone.Text?.Trim();
-            string headText = txtHeadOfDept.Text?.Trim();
-            string budgetText = txtBudget.Text?.Trim();
+            var errors = new StringBuilder();
+            Control firstInvalid = null;
+
+            string name = (txtName.Text ?? "").Trim();
+            string description = (txtDescription.Text ?? "").Trim();
+            string location = (txtLocation.Text ?? "").Trim();
+            string phone = (txtPhone.Text ?? "").Trim();
+            string headText = (txtHeadOfDept.Text ?? "").Trim();
+            string budgetText = (txtBudget.Text ?? "").Trim();
             bool isActive = chkIsActive.IsChecked ?? true;
 
-            if (string.IsNullOrWhiteSpace(name))
+            // ---- Name (required, length) ----
+            if (string.IsNullOrWhiteSpace(name) || name.Length < NameMinLen || name.Length > NameMaxLen)
             {
-                MessageBox.Show("Name is required.", "Invalid Input",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                var msg = string.Format("Name is required (length {0}-{1}).", NameMinLen, NameMaxLen);
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtName, msg);
+                if (firstInvalid == null) firstInvalid = txtName;
+            }
+            else
+            {
+                // naive in-memory uniqueness check (case-insensitive)
+                foreach (var d in Departments)
+                {
+                    if (!requireExisting || d.DepartmentId != deptId)
+                    {
+                        if (string.Equals((d.Name ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var msg = "A department with this name already exists.";
+                            errors.AppendLine("• " + msg);
+                            MarkInvalid(txtName, msg);
+                            if (firstInvalid == null) firstInvalid = txtName;
+                            break;
+                        }
+                    }
+                }
             }
 
+            // ---- Description (optional, max len) ----
+            if (description.Length > DescriptionMaxLen)
+            {
+                var msg = string.Format("Description is too long (max {0} characters).", DescriptionMaxLen);
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtDescription, msg);
+                if (firstInvalid == null) firstInvalid = txtDescription;
+            }
+
+            // ---- Location (required, length) ----
+            if (string.IsNullOrWhiteSpace(location) || location.Length < LocationMinLen || location.Length > LocationMaxLen)
+            {
+                var msg = string.Format("Location is required (length {0}-{1}).", LocationMinLen, LocationMaxLen);
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtLocation, msg);
+                if (firstInvalid == null) firstInvalid = txtLocation;
+            }
+
+            // ---- Phone (required, basic pattern) ----
+            if (string.IsNullOrWhiteSpace(phone) || !PhoneRegex.IsMatch(phone))
+            {
+                var msg = "Phone is required (digits, spaces, (), -, optional +).";
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtPhone, msg);
+                if (firstInvalid == null) firstInvalid = txtPhone;
+            }
+
+            // ---- HeadOfDept (required, positive int) ----
             int headId;
-            if (!int.TryParse(headText, NumberStyles.Integer, CultureInfo.InvariantCulture, out headId))
+            if (!int.TryParse(headText, NumberStyles.Integer, CultureInfo.InvariantCulture, out headId) || headId <= 0)
             {
-                MessageBox.Show("Head of Dept must be an integer (staff/employee ID).", "Invalid Input",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                var msg = "Head of Dept must be a positive integer (staff/employee ID).";
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtHeadOfDept, msg);
+                if (firstInvalid == null) firstInvalid = txtHeadOfDept;
             }
 
+            // ---- Budget (required, non-negative decimal; clamp to 2 dp) ----
             decimal budget;
-            if (!decimal.TryParse(budgetText, NumberStyles.Number, CultureInfo.InvariantCulture, out budget))
+            if (!decimal.TryParse(budgetText, NumberStyles.Number, CultureInfo.InvariantCulture, out budget) || budget < 0m)
             {
-                MessageBox.Show("Budget must be a valid number.", "Invalid Input",
+                var msg = "Budget must be a non-negative number (e.g., 1000.00).";
+                errors.AppendLine("• " + msg);
+                MarkInvalid(txtBudget, msg);
+                if (firstInvalid == null) firstInvalid = txtBudget;
+            }
+            else
+            {
+                budget = decimal.Round(budget, 2, MidpointRounding.AwayFromZero);
+            }
+
+            if (errors.Length > 0)
+            {
+                MessageBox.Show("Please fix the following:\n\n" + errors, "Invalid Input",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (firstInvalid != null) firstInvalid.Focus();
                 return false;
             }
 
+            // All good
             dept = new Department
             {
                 DepartmentId = deptId,
                 Name = name,
-                Description = description ?? "",
-                Location = location ?? "",
-                Phone = phone ?? "",
+                Description = description,
+                Location = location,
+                Phone = phone,
                 HeadOfDept = headId,
                 Budget = budget,
                 IsActive = isActive
@@ -171,13 +282,13 @@ ORDER BY Name;";
             {
                 await AddDepartmentToDatabase(newDept);
                 await LoadDepartmentsFromDatabase();
-                MessageBox.Show($"Department '{newDept.Name}' added.", "Success",
+                MessageBox.Show(string.Format("Department '{0}' added.", newDept.Name), "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 ClearInputs();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error adding department: {ex.Message}", "Error",
+                MessageBox.Show("Error adding department: " + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -192,12 +303,12 @@ ORDER BY Name;";
             {
                 await UpdateDepartmentInDatabase(updated);
                 await LoadDepartmentsFromDatabase();
-                MessageBox.Show($"Department '{updated.Name}' updated.", "Success",
+                MessageBox.Show(string.Format("Department '{0}' updated.", updated.Name), "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error updating department: {ex.Message}", "Error",
+                MessageBox.Show("Error updating department: " + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -214,7 +325,7 @@ ORDER BY Name;";
             }
 
             var confirm = MessageBox.Show(
-                $"Delete department '{selected.Name}' (ID {selected.DepartmentId})?",
+                string.Format("Delete department '{0}' (ID {1})?", selected.Name, selected.DepartmentId),
                 "Confirm Delete",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -225,13 +336,13 @@ ORDER BY Name;";
             {
                 await DeleteDepartmentFromDatabase(selected.DepartmentId);
                 await LoadDepartmentsFromDatabase();
-                MessageBox.Show($"Department '{selected.Name}' deleted.", "Success",
+                MessageBox.Show(string.Format("Department '{0}' deleted.", selected.Name), "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 ClearInputs();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting department: {ex.Message}", "Error",
+                MessageBox.Show("Error deleting department: " + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -247,6 +358,7 @@ ORDER BY Name;";
             txtBudget.Clear();
             chkIsActive.IsChecked = true;
             DepartmentsDataGrid.SelectedItem = null;
+            ClearValidation();
         }
 
         // --- SQL ops ---

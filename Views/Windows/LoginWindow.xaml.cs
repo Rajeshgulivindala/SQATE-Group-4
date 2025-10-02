@@ -2,179 +2,171 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using HospitalManagementSystem.Services.Authentication;
 using HospitalManagementSystem.Services.Data;
 using HospitalManagementSystem.Models;
-using BCrypt.Net;
 
+// NOTE: requires BCrypt.Net-Next package
 namespace HospitalManagementSystem.Views.Windows
 {
-    /// <summary>
-    /// Interaction logic for LoginWindow.xaml
-    /// </summary>
     public partial class LoginWindow : Window
     {
-        // Fields to track failed login attempts for a simple lockout mechanism.
         private int _failedLoginAttempts = 0;
         private DateTime? _lastFailedLogin;
+        private bool _suppressPasswordSync = false;
 
         public LoginWindow()
         {
-            try
-            {
-                InitializeComponent();
-            }
-            catch (Exception ex)
-            {
-                // This will catch any errors that prevent the UI from loading.
-                MessageBox.Show($"Initialization failed: {ex.Message}", "Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                throw; // Re-throw the exception to ensure it's logged.
-            }
+            InitializeComponent();
         }
 
-        /// <summary>
-        /// Handles the Click event for the Login button.
-        /// </summary>
+        // ===== Login =====
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
         {
-            // Debugging message to confirm the method has been entered
-            Console.WriteLine("LoginButton_Click method entered.");
+            string username = (UsernameTextBox.Text ?? string.Empty).Trim();
+            string password = (ShowPasswordCheckBox.IsChecked == true)
+                                ? (PasswordRevealTextBox.Text ?? string.Empty)
+                                : (PasswordBox.Password ?? string.Empty);
 
-            // Get the user input from the text boxes.
-            string username = UsernameTextBox.Text.Trim();
-            string password = PasswordBox.Password;
-
-            // Immediately update the UI to provide user feedback.
             LoadingProgressBar.Visibility = Visibility.Visible;
             LoginButton.IsEnabled = false;
-            LoginButton.Content = "Signing in...";
-            ErrorMessageText.Text = "";
+            LoginButton.Content = "Signing in…";
+            ErrorMessageText.Text = string.Empty;
 
-            // --- Basic Client-Side Validation ---
+            // Required fields
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 ErrorMessageText.Text = "Please enter a username and password.";
-                ResetLoginButton();
-                Console.WriteLine("Validation failed: Username or password was empty.");
+                ResetLoginUi();
                 return;
             }
 
-            // --- Simple Account Lockout Check ---
+            // ONLY rule: min length 6
+            if (password.Length < 6)
+            {
+                ErrorMessageText.Text = "Password must be at least 6 characters.";
+                ResetLoginUi();
+                return;
+            }
+
+            // Simple lockout
             if (_failedLoginAttempts >= 5 && _lastFailedLogin.HasValue &&
                 (DateTime.Now - _lastFailedLogin.Value).TotalMinutes < 15)
             {
-                ErrorMessageText.Text = "Account locked due to too many failed attempts. Please try again in 15 minutes.";
-                ResetLoginButton();
-                Console.WriteLine("Login attempt blocked: Account is locked.");
+                ErrorMessageText.Text = "Account locked due to too many failed attempts. Try again in 15 minutes.";
+                ResetLoginUi();
                 return;
             }
 
-            // --- Server-Side Authentication ---
             try
             {
-                // Use a 'using' statement to ensure the database context is properly disposed.
                 using (var context = new HMSDbContext())
                 {
-                    // Find the user by username and ensure they are active.
                     var user = context.Users.FirstOrDefault(u => u.Username == username && u.IsActive);
 
-                    // Verify the password using the BCrypt hashing library.
-                    if (user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                    bool ok = false;
+                    if (user != null)
                     {
-                        Console.WriteLine("Login successful.");
-                        // --- Successful Login ---
+                        // verify with BCrypt
+                        ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+                    }
+
+                    if (ok)
+                    {
                         AuthenticationService.CurrentUser = user;
                         _failedLoginAttempts = 0;
 
-                        // ------------------------------------------------------------------
-                        // UPDATED: ROLE-BASED REDIRECTION LOGIC
-                        // Doctor role now redirects to MainWindow.
-                        // ------------------------------------------------------------------
-                        Window targetWindow = null;
+                        // success popup
+                        MessageBox.Show("Login successful.", "Success",
+                                        MessageBoxButton.OK, MessageBoxImage.Information);
 
-                        // Check the role of the authenticated user
-                        switch (user.Role)
-                        {
-                            case "Admin":
-                                targetWindow = new MainWindow();
-                                break;
-                            case "Doctor":
-                                // Admin and Doctor roles use the full administrative MainWindow
-                                targetWindow = new MainWindow();
-                                break;
-                            case "Nurse":
-                                // Nurse role opens the dedicated Nurse dashboard
-                                targetWindow = new MainWindow();
-                                break;
-                            case "Clerk":
-                                // Nurse role opens the dedicated Nurse dashboard
-                                targetWindow = new MainWindow();
-                                break;
-                            default:
-                                // Handle unknown roles gracefully
-                                ErrorMessageText.Text = $"Unknown role assigned: {user.Role}. Access denied.";
-                                ResetLoginButton();
-                                return;
-                        }
+                        // open main window
+                        var target = new MainWindow();
+                        target.Show();
+                        Close();
 
-                        // Open the target window and close the login window
-                        if (targetWindow != null)
-                        {
-                            targetWindow.Show();
-                            this.Close();
-                        }
-                        // ------------------------------------------------------------------
-
-                        // Update the last login time in the background to not block the UI.
-                        await Task.Run(() =>
+                        // update last login (background)
+                        _ = Task.Run(() =>
                         {
                             try
                             {
-                                using (var bgContext = new HMSDbContext())
+                                using (var bg = new HMSDbContext())
                                 {
-                                    // It's safer to fetch the user again in the new context
-                                    var bgUser = bgContext.Users.Find(user.UserID);
-                                    if (bgUser != null)
+                                    var u = bg.Users.Find(user.UserID);
+                                    if (u != null)
                                     {
-                                        bgUser.LastLogin = DateTime.Now;
-                                        bgContext.SaveChanges();
+                                        u.LastLogin = DateTime.Now;
+                                        bg.SaveChanges();
                                     }
                                 }
                             }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Background task failed to update last login: {ex.Message}");
-                            }
+                            catch { /* ignore background failures */ }
                         });
+
+                        return;
                     }
-                    else
-                    {
-                        // --- Failed Login ---
-                        Console.WriteLine("Login failed: Invalid username or password.");
-                        _failedLoginAttempts++;
-                        _lastFailedLogin = DateTime.Now;
-                        ErrorMessageText.Text = "Invalid username or password.";
-                        ResetLoginButton();
-                    }
+
+                    // failed
+                    _failedLoginAttempts++;
+                    _lastFailedLogin = DateTime.Now;
+                    ErrorMessageText.Text = "Invalid username or password.";
+                    ResetLoginUi();
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                // Catch any exceptions that occur during the login process (e.g., database connection issues).
                 ErrorMessageText.Text = "Login failed. Please check your connection and try again.";
-                Console.WriteLine($"Login Exception: {ex.Message}");
-                ResetLoginButton();
+                ResetLoginUi();
             }
         }
 
-        /// <summary>
-        /// Resets the UI state of the login button and progress bar.
-        /// </summary>
-        private void ResetLoginButton()
+        private void ResetLoginUi()
         {
             LoadingProgressBar.Visibility = Visibility.Collapsed;
             LoginButton.IsEnabled = true;
             LoginButton.Content = "LOGIN";
+        }
+
+        // ===== Show / Hide password wiring =====
+        private void ShowPasswordCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _suppressPasswordSync = true;
+            PasswordRevealTextBox.Text = PasswordBox.Password;
+            _suppressPasswordSync = false;
+
+            PasswordRevealTextBox.Visibility = Visibility.Visible;
+            PasswordBox.Visibility = Visibility.Collapsed;
+            PasswordRevealTextBox.Focus();
+            PasswordRevealTextBox.CaretIndex = PasswordRevealTextBox.Text.Length;
+        }
+
+        private void ShowPasswordCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _suppressPasswordSync = true;
+            PasswordBox.Password = PasswordRevealTextBox.Text;
+            _suppressPasswordSync = false;
+
+            PasswordRevealTextBox.Visibility = Visibility.Collapsed;
+            PasswordBox.Visibility = Visibility.Visible;
+            PasswordBox.Focus();
+            PasswordBox.SelectAll();
+        }
+
+        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (_suppressPasswordSync || ShowPasswordCheckBox.IsChecked != true) return;
+            _suppressPasswordSync = true;
+            PasswordRevealTextBox.Text = PasswordBox.Password;
+            _suppressPasswordSync = false;
+        }
+
+        private void PasswordRevealTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_suppressPasswordSync || ShowPasswordCheckBox.IsChecked != true) return;
+            _suppressPasswordSync = true;
+            PasswordBox.Password = PasswordRevealTextBox.Text;
+            _suppressPasswordSync = false;
         }
     }
 }

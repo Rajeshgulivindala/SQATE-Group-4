@@ -1,121 +1,190 @@
 ﻿<UserControl x:Class="HospitalManagementSystem.Views.UserControls.BillingManagementView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="#F4F7FC">
 
-	
-	xmlns:System="clr-namespace:System;assembly=mscorlib"
+	<!-- Validation visuals for inputs inside the DataGrid -->
+	<UserControl.Resources>
+		<!-- Red border adornment when a cell is invalid -->
+		<ControlTemplate x:Key="ValidationErrorTemplate">
+			<DockPanel LastChildFill="True">
+				<Border BorderBrush="#DC3545" BorderThickness="2" CornerRadius="3" DockPanel.ZIndex="1"/>
+				<AdornedElementPlaceholder/>
+			</DockPanel>
+		</ControlTemplate>
 
-	mc:Ignorable="d"
-	
-	Background="#F4F7FC">
+		<!-- TextBox style used while editing grid cells -->
+		<Style x:Key="DataGridEditingTextBoxStyle" TargetType="TextBox">
+			<Setter Property="Validation.ErrorTemplate" Value="{StaticResource ValidationErrorTemplate}"/>
+			<Setter Property="ToolTip"
+                    Value="{Binding (Validation.Errors)[0].ErrorContent,
+                            RelativeSource={RelativeSource Self}}"/>
+			<Style.Triggers>
+				<Trigger Property="Validation.HasError" Value="True">
+					<Setter Property="BorderBrush" Value="#DC3545"/>
+					<Setter Property="BorderThickness" Value="1.5"/>
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+	</UserControl.Resources>
 
-    <Grid Margin="20" Background="White">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+	<Grid Margin="20" Background="White">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+		</Grid.RowDefinitions>
 
-        <!-- Header -->
-        <TextBlock Grid.Row="0"
+		<!-- Header -->
+		<TextBlock Grid.Row="0"
                    Text="Patient Billing &amp; Services"
                    FontSize="28"
                    FontWeight="Bold"
                    Foreground="#007ACC"
                    Margin="0,0,0,15"/>
+		<Separator Grid.Row="0" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
 
-        <Separator Grid.Row="0" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+		<!-- Patient Details -->
+		<GroupBox Grid.Row="1" Header="Patient Details" Margin="0,10,0,10" BorderBrush="#DDDDDD" FontWeight="Bold">
+			<StackPanel Orientation="Vertical" Margin="5">
+				<Grid>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="2*"/>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
 
-        <!-- Patient/Customer Information Section -->
-        <GroupBox Grid.Row="1" Header="Patient Details" Margin="0,10,0,10" BorderBrush="#DDDDDD" FontWeight="Bold">
-            <StackPanel Orientation="Vertical" Margin="5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+					<TextBlock Grid.Column="0" Text="Patient Name/ID:" Margin="5" VerticalAlignment="Center"/>
+					<TextBox x:Name="txtPatient" Grid.Column="1" Margin="5" Padding="3"/>
 
-                    <TextBlock Grid.Column="0" Text="Patient Name/ID:" Margin="5" VerticalAlignment="Center"/>
-                    <TextBox Grid.Column="1" Margin="5" Padding="3"/>
+					<TextBlock Grid.Column="2" Text="Department:" Margin="20,5,5,5" VerticalAlignment="Center"/>
+					<ComboBox x:Name="cmbDepartment" Grid.Column="3" Margin="5" Padding="3">
+						<ComboBoxItem Content="Inpatient"/>
+						<ComboBoxItem Content="Outpatient"/>
+						<ComboBoxItem Content="Emergency"/>
+					</ComboBox>
+				</Grid>
 
-                    <TextBlock Grid.Column="2" Text="Department:" Margin="20,5,5,5" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="3" Margin="5" Padding="3">
-                        <ComboBoxItem Content="Inpatient"/>
-                        <ComboBoxItem Content="Outpatient"/>
-                        <ComboBoxItem Content="Emergency"/>
-                    </ComboBox>
-                </Grid>
+				<Grid Margin="0,5,0,0">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
 
-                <Grid Margin="0,5,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Admission/Visit Date:" Margin="5" VerticalAlignment="Center"/>
+					<TextBlock Grid.Column="0" Text="Admission/Visit Date:" Margin="5" VerticalAlignment="Center"/>
+					<DatePicker x:Name="dpVisitDate" Grid.Column="1" Margin="5" Padding="3"/>
+				</Grid>
+			</StackPanel>
+		</GroupBox>
 
-                    <DatePicker Grid.Column="1" Margin="5" Padding="3" SelectedDate="{x:Static Member=System:DateTime.Now}"/>
-                </Grid>
-            </StackPanel>
-        </GroupBox>
-
-        <!-- Product/Service Details Section (DataGrid) -->
-        <GroupBox Grid.Row="2" Header="Services &amp; Items" Margin="0,10,0,10" BorderBrush="#DDDDDD" FontWeight="Bold">
-            <!-- DataGrid is bound to the 'Items' ObservableCollection in the C# code -->
-            <DataGrid x:Name="productsDataGrid"
+		<!-- Services & Items -->
+		<GroupBox Grid.Row="2" Header="Services &amp; Items" Margin="0,10,0,10" BorderBrush="#DDDDDD" FontWeight="Bold">
+			<DataGrid x:Name="productsDataGrid"
                       ItemsSource="{Binding Items}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       Margin="5"
                       RowBackground="#FAFAFA"
-                      AlternatingRowBackground="#F0F0F0">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Service/Item Name"
-                                        Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="*"/>
-                    <DataGridTextColumn Header="Quantity"
-                                        Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="Auto"/>
-                    <DataGridTextColumn Header="Unit Price (USD)"
-                                        Binding="{Binding UnitPrice, StringFormat=C, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="Auto"/>
-                    <!-- SubTotal column is Read-Only, showing the calculated value -->
-                    <DataGridTextColumn Header="Line Total (USD)"
-                                        Binding="{Binding SubTotal, StringFormat=C}"
-                                        Width="Auto"
-                                        IsReadOnly="True"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </GroupBox>
+                      AlternatingRowBackground="#F0F0F0"
+                      RowEditEnding="productsDataGrid_RowEditEnding">
+				<DataGrid.Columns>
 
-        <!-- Control Buttons for CRUD -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <Button Content="Add Service/Item (C)"
+					<!-- Name -->
+					<DataGridTextColumn Header="Service/Item Name" Width="*">
+						<DataGridTextColumn.Binding>
+							<Binding Path="Name"
+                                     UpdateSourceTrigger="PropertyChanged"
+                                     ValidatesOnDataErrors="True"
+                                     NotifyOnValidationError="True"
+                                     TargetNullValue="" />
+						</DataGridTextColumn.Binding>
+						<DataGridTextColumn.EditingElementStyle>
+							<Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingTextBoxStyle}"/>
+						</DataGridTextColumn.EditingElementStyle>
+					</DataGridTextColumn>
+
+					<!-- Quantity -->
+					<DataGridTextColumn Header="Quantity" Width="Auto" MinWidth="90">
+						<DataGridTextColumn.Binding>
+							<Binding Path="Quantity"
+                                     UpdateSourceTrigger="PropertyChanged"
+                                     ValidatesOnDataErrors="True"
+                                     NotifyOnValidationError="True"
+                                     TargetNullValue="1" />
+						</DataGridTextColumn.Binding>
+						<DataGridTextColumn.EditingElementStyle>
+							<Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingTextBoxStyle}">
+								<!-- optional numeric typing filter -->
+								<EventSetter Event="PreviewTextInput" Handler="NumericOnly_PreviewTextInput"/>
+								<Setter Property="HorizontalContentAlignment" Value="Right"/>
+							</Style>
+						</DataGridTextColumn.EditingElementStyle>
+					</DataGridTextColumn>
+
+					<!-- Unit Price -->
+					<DataGridTextColumn Header="Unit Price (USD)" Width="Auto" MinWidth="140">
+						<DataGridTextColumn.Binding>
+							<!-- The {} escapes a markup extension so {0:F2} is treated as format, not binding -->
+							<Binding Path="UnitPrice"
+                                     UpdateSourceTrigger="PropertyChanged"
+                                     ValidatesOnDataErrors="True"
+                                     NotifyOnValidationError="True"
+                                     StringFormat="{}{0:F2}"
+                                     TargetNullValue="0.00" />
+						</DataGridTextColumn.Binding>
+						<DataGridTextColumn.EditingElementStyle>
+							<Style TargetType="TextBox" BasedOn="{StaticResource DataGridEditingTextBoxStyle}">
+								<!-- optional decimal typing filter -->
+								<EventSetter Event="PreviewTextInput" Handler="DecimalOnly_PreviewTextInput"/>
+								<Setter Property="HorizontalContentAlignment" Value="Right"/>
+							</Style>
+						</DataGridTextColumn.EditingElementStyle>
+					</DataGridTextColumn>
+
+					<!-- SubTotal (read-only) -->
+					<DataGridTextColumn Header="Line Total (USD)"
+                                        IsReadOnly="True"
+                                        Width="Auto"
+                                        MinWidth="160"
+                                        Binding="{Binding SubTotal, StringFormat={}{0:C}}"/>
+				</DataGrid.Columns>
+			</DataGrid>
+		</GroupBox>
+
+		<!-- CRUD buttons -->
+		<StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+			<Button Content="Add Service/Item (C)"
                     Click="AddItem_Click"
                     Background="#28A745" Foreground="White"
                     Padding="10,5" Margin="5" FontWeight="SemiBold"/>
-
-            <Button Content="Remove Selected Item (D)"
+			<Button Content="Remove Selected Item (D)"
                     Click="RemoveItem_Click"
                     Background="#DC3545" Foreground="White"
                     Padding="10,5" Margin="5" FontWeight="SemiBold"/>
-        </StackPanel>
+		</StackPanel>
 
-        <!-- Total and Generate Button -->
-        <Grid Grid.Row="4" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+		<!-- Total & Generate -->
+		<Grid Grid.Row="4" Margin="0,10,0,0">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
 
-            <!-- Total Amount Display - Bound to TotalAmount property in C# -->
-            <TextBlock Grid.Column="1"
+			<Button Grid.Column="0"
+                    Content="Process &amp; Generate Final Bill"
+                    Click="GenerateBill_Click"
+                    HorizontalAlignment="Left"
+                    Background="#007ACC" Foreground="White"
+                    Padding="15,8" FontSize="16" FontWeight="Bold"/>
+
+			<TextBlock Grid.Column="1"
                        Text="GRAND TOTAL DUE:"
                        FontSize="20"
                        FontWeight="Bold"
@@ -123,22 +192,13 @@
                        Margin="0,0,20,0"
                        VerticalAlignment="Center"/>
 
-            <TextBlock x:Name="totalAmountTextBlock"
+			<TextBlock x:Name="totalAmountTextBlock"
                        Grid.Column="2"
-                       Text="{Binding TotalAmount, StringFormat=C}"
+                       Text="{Binding TotalAmount, StringFormat={}{0:C}}"
                        FontSize="24"
                        FontWeight="ExtraBold"
                        Foreground="#007ACC"
                        VerticalAlignment="Center"/>
-
-            <!-- Generate Bill Button -->
-            <Button Grid.Column="0"
-                    Content="Process &amp; Generate Final Bill"
-                    Click="GenerateBill_Click"
-                    HorizontalAlignment="Left"
-                    Background="#007ACC" Foreground="White"
-                    Padding="15,8" FontSize="16" FontWeight="Bold"/>
-
-        </Grid>
-    </Grid>
+		</Grid>
+	</Grid>
 </UserControl>

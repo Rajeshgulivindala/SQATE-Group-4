@@ -1,28 +1,103 @@
 ﻿<Window x:Class="HospitalManagementSystem.Views.Windows.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="HMS Login" Height="400" Width="350"
-        WindowStartupLocation="CenterScreen">
+        Title="Sign in"
+        Width="420" Height="460"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F5F7FB">
+    <Grid>
+        <Border CornerRadius="14"
+                Background="White"
+                Padding="28"
+                Margin="24"
+                BorderBrush="#E6E9EF" BorderThickness="1">
+            <StackPanel VerticalAlignment="Center">
+                <!-- Title -->
+                <StackPanel Margin="0,0,0,14">
+                    <TextBlock Text="Hospital Management System"
+                               FontSize="18" FontWeight="SemiBold" Foreground="#223042"/>
+                    <TextBlock Text="Please sign in to continue"
+                               FontSize="12" Foreground="#6C7A92" Margin="0,2,0,0"/>
+                </StackPanel>
 
-    <StackPanel Margin="30" Background="White">
-        <TextBlock Text="Hospital Management System" FontSize="20" 
-                  HorizontalAlignment="Center" Margin="0,20"/>
+                <!-- Username -->
+                <StackPanel Margin="0,8,0,0">
+                    <TextBlock Text="Username" FontSize="12" Foreground="#3B4758"/>
+                    <TextBox x:Name="UsernameTextBox"
+                             Height="36"
+                             Padding="10,6"
+                             BorderBrush="#D9DEE8" BorderThickness="1"
+                             Background="#FAFBFE"/>
+                </StackPanel>
 
-        <TextBlock Text="Username" Margin="0,20,0,5"/>
-        <TextBox x:Name="UsernameTextBox" Height="30"/>
+                <!-- Password -->
+                <StackPanel Margin="0,8,0,0">
+                    <TextBlock Text="Password" FontSize="12" Foreground="#3B4758"/>
+                    <Grid Height="36" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-        <TextBlock Text="Password" Margin="0,10,0,5"/>
-        <PasswordBox x:Name="PasswordBox" Height="30"/>
+                        <!-- Hidden password -->
+                        <PasswordBox x:Name="PasswordBox"
+                                     Grid.Column="0"
+                                     Padding="10,6"
+                                     BorderBrush="#D9DEE8" BorderThickness="1"
+                                     Background="#FAFBFE"
+                                     PasswordChanged="PasswordBox_PasswordChanged"/>
 
-        <CheckBox x:Name="RememberMeCheckBox" Content="Remember Me" Margin="0,10"/>
+                        <!-- Revealed password -->
+                        <TextBox x:Name="PasswordRevealTextBox"
+                                 Grid.Column="0"
+                                 Padding="10,6"
+                                 BorderBrush="#D9DEE8" BorderThickness="1"
+                                 Background="#FAFBFE"
+                                 Visibility="Collapsed"
+                                 TextChanged="PasswordRevealTextBox_TextChanged"/>
 
-        <Button x:Name="LoginButton" Content="LOGIN" Height="40" Margin="0,20" 
-                Background="Blue" Foreground="White" Click="LoginButton_Click"/>
+                        <!-- Show/Hide -->
+                        <CheckBox x:Name="ShowPasswordCheckBox"
+                                  Grid.Column="1"
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Content="Show"
+                                  Checked="ShowPasswordCheckBox_Checked"
+                                  Unchecked="ShowPasswordCheckBox_Unchecked"/>
+                    </Grid>
+                </StackPanel>
 
-        <TextBlock x:Name="ErrorMessageText" Foreground="Red" 
-                  HorizontalAlignment="Center" Margin="0,10"/>
+                <!-- Error + Progress -->
+                <StackPanel Margin="0,8,0,0">
+                    <TextBlock x:Name="ErrorMessageText"
+                               Foreground="#D64545"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                    <ProgressBar x:Name="LoadingProgressBar"
+                                 Height="2"
+                                 Margin="0,6,0,0"
+                                 Visibility="Collapsed"
+                                 IsIndeterminate="True"/>
+                </StackPanel>
 
-        <ProgressBar x:Name="LoadingProgressBar" Height="5" Margin="0,10" 
-                    Visibility="Collapsed"/>
-    </StackPanel>
+                <!-- Actions -->
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left">
+                    <Button x:Name="LoginButton"
+                            Content="LOGIN"
+                            Height="38" MinWidth="120"
+                            Background="#2E7DFF" Foreground="White"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            Click="LoginButton_Click"
+                            IsDefault="True"/>
+                </StackPanel>
+
+                <TextBlock Text="Tip: Press Enter to sign in"
+                           Foreground="#9AA6B2"
+                           FontSize="11"
+                           Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>

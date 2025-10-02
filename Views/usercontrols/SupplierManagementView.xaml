@@ -28,7 +28,9 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="4">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -94,8 +96,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#FFFFFF" Padding="20" CornerRadius="8"
-                Margin="0,0,0,20">
+        <Border Grid.Row="0" Background="#FFFFFF" Padding="20" CornerRadius="8" Margin="0,0,0,20">
             <TextBlock Text="🚚 Supplier Management"
                        FontSize="28"
                        FontWeight="Bold"
@@ -111,11 +112,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left Side: CRUD Form in a card -->
-            <Border Grid.Column="0"
-                    Background="#FFFFFF"
-                    CornerRadius="8"
-                    Padding="20"
-                    Margin="0,0,20,0">
+            <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="8" Padding="20" Margin="0,0,20,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="Supplier Details"
@@ -130,10 +127,11 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Supplier ID and Company Name -->
+                            <!-- Column 0 -->
                             <StackPanel Grid.Column="0" Margin="0,0,15,0">
                                 <Label Content="Supplier ID:"/>
-                                <TextBox x:Name="txtSupplierId" IsReadOnly="True" Background="#F0F0F0" HorizontalAlignment="Stretch" MinWidth="120"/>
+                                <TextBox x:Name="txtSupplierId" IsReadOnly="True" Background="#F0F0F0"
+                                         HorizontalAlignment="Stretch" MinWidth="120"/>
                                 <Label Content="Contact Person:"/>
                                 <TextBox x:Name="txtContactPerson"/>
                                 <Label Content="Email:"/>
@@ -143,38 +141,40 @@
                                 <Label Content="Payment Terms:"/>
                                 <TextBox x:Name="txtPaymentTerms"/>
                                 <Label Content="Notes:"/>
-                                <TextBox x:Name="txtNotes" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                                <TextBox x:Name="txtNotes" Height="80" TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"/>
                             </StackPanel>
+
+                            <!-- Column 1 -->
                             <StackPanel Grid.Column="1">
                                 <Label Content="Company Name:"/>
                                 <TextBox x:Name="txtCompanyName"/>
                                 <Label Content="Phone:"/>
                                 <TextBox x:Name="txtPhone"/>
                                 <Label Content="Address:"/>
-                                <TextBox x:Name="txtAddress" Height="40" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                                <TextBox x:Name="txtAddress" Height="40" TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"/>
                                 <Label Content="Country:"/>
                                 <TextBox x:Name="txtCountry"/>
                                 <Label Content="Rating:"/>
                                 <TextBox x:Name="txtRating"/>
-                                <CheckBox x:Name="chkIsActive" Content="Is Active" Margin="0,15,0,0" VerticalAlignment="Center" Foreground="#34495e" FontWeight="SemiBold"/>
+                                <CheckBox x:Name="chkIsActive" Content="Is Active" Margin="0,15,0,0"
+                                          VerticalAlignment="Center" Foreground="#34495e" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,0,0">
-                            <Button x:Name="btnAdd" Content="Add Supplier" Style="{StaticResource CrudButton}" Click="btnAdd_Click"/>
-                            <Button x:Name="btnUpdate" Content="Update" Style="{StaticResource CrudButton}" Click="btnUpdate_Click" IsEnabled="False"/>
-                            <Button x:Name="btnDelete" Content="Delete" Style="{StaticResource CrudButton}" Background="#e74c3c" BorderBrush="#c0392b" Click="btnDelete_Click" IsEnabled="False"/>
-                            <Button x:Name="btnClear" Content="Clear" Style="{StaticResource CrudButton}" Background="#95a5a6" BorderBrush="#7f8c8d" Click="btnClear_Click"/>
+                            <Button x:Name="btnAdd"    Content="Add Supplier" Style="{StaticResource CrudButton}" Click="btnAdd_Click"/>
+                            <Button x:Name="btnUpdate" Content="Update"       Style="{StaticResource CrudButton}" Click="btnUpdate_Click" IsEnabled="False"/>
+                            <Button x:Name="btnDelete" Content="Delete"       Style="{StaticResource CrudButton}" Background="#e74c3c" BorderBrush="#c0392b" Click="btnDelete_Click" IsEnabled="False"/>
+                            <Button x:Name="btnClear"  Content="Clear"        Style="{StaticResource CrudButton}" Background="#95a5a6" BorderBrush="#7f8c8d" Click="btnClear_Click"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
 
             <!-- Right Side: DataGrid in a card -->
-            <Border Grid.Column="1"
-                    Background="#FFFFFF"
-                    CornerRadius="8"
-                    Padding="20">
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="8" Padding="20">
                 <StackPanel>
                     <TextBlock Text="Existing Suppliers"
                                FontSize="20"
@@ -185,19 +185,18 @@
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               CanUserAddRows="False"
-                              ItemsSource="{Binding}"
                               SelectionChanged="SuppliersDataGrid_SelectionChanged"
                               Background="#FFFFFF"
                               BorderBrush="#E0E0E0"
                               BorderThickness="1"
                               AlternatingRowBackground="#f5f5f5">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Supplier ID" Binding="{Binding SupplierId}" Width="Auto"/>
+                            <DataGridTextColumn Header="Supplier ID"   Binding="{Binding SupplierId}"   Width="Auto"/>
                             <DataGridTextColumn Header="Company Name" Binding="{Binding CompanyName}" Width="*"/>
                             <DataGridTextColumn Header="Contact Person" Binding="{Binding ContactPerson}" Width="*"/>
-                            <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="*"/>
-                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
-                            <DataGridTextColumn Header="City" Binding="{Binding City}" Width="*"/>
+                            <DataGridTextColumn Header="Phone"        Binding="{Binding Phone}"        Width="*"/>
+                            <DataGridTextColumn Header="Email"        Binding="{Binding Email}"        Width="*"/>
+                            <DataGridTextColumn Header="City"         Binding="{Binding City}"         Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
