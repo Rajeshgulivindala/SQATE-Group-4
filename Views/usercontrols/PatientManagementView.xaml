@@ -6,7 +6,6 @@
              mc:Ignorable="d"
              Background="#F4F7FC">
 
-    <!-- Make the WHOLE view scrollable -->
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   CanContentScroll="True">
@@ -98,13 +97,15 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0" Text="Phone:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox  x:Name="txtPhone" Grid.Column="1" Margin="0,0,10,0" ToolTip="10 digits or +CC + 10 digits (e.g., 9876543210 or +91 9876543210)"/>
+                        <TextBox  x:Name="txtPhone" Grid.Column="1" Margin="0,0,10,0"
+                                  ToolTip="10 digits or +CC + 10 digits (e.g., 9876543210 or +91 9876543210)"/>
 
                         <TextBlock Grid.Column="3" Text="Email:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox  x:Name="txtEmail" Grid.Column="4" Margin="0,0,10,0"/>
 
                         <TextBlock Grid.Column="6" Text="Blood Type:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox  x:Name="txtBloodType" Grid.Column="7" Margin="0,0,10,0" ToolTip="A+, A-, B+, B-, AB+, AB-, O+, O-"/>
+                        <TextBox  x:Name="txtBloodType" Grid.Column="7" Margin="0,0,10,0"
+                                  ToolTip="A+, A-, B+, B-, AB+, AB-, O+, O-"/>
                     </Grid>
 
                     <!-- Row 4 -->
@@ -134,7 +135,8 @@
                         <TextBox  x:Name="txtEmergencyContact" Grid.Column="1" Margin="0,0,10,0"/>
 
                         <TextBlock Grid.Column="3" Text="Emergency Phone:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox  x:Name="txtEmergencyPhone" Grid.Column="4" Margin="0,0,10,0" ToolTip="Optional. 10 digits or +CC + 10 digits"/>
+                        <TextBox  x:Name="txtEmergencyPhone" Grid.Column="4" Margin="0,0,10,0"
+                                  ToolTip="Optional. 10 digits or +CC + 10 digits"/>
 
                         <TextBlock Grid.Column="6" Text="Insurance Provider:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox  x:Name="txtInsuranceProvider" Grid.Column="7" Margin="0,0,10,0"/>
@@ -158,14 +160,34 @@
                     </Grid>
 
                     <!-- Row 7 -->
-                    <Grid Margin="0,0,0,0">
+                    <Grid Margin="0,0,10,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
                         <TextBlock Grid.Column="0" Text="Medical Conditions:" VerticalAlignment="Top" Margin="0,0,5,0"/>
-                        <TextBox  x:Name="txtMedicalConditions" Grid.Column="1" Margin="0,0,10,0" AcceptsReturn="True" Height="80" TextWrapping="Wrap"/>
+                        <TextBox  x:Name="txtMedicalConditions" Grid.Column="1" Margin="0,0,10,0"
+                                  AcceptsReturn="True" Height="80" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <!-- Row 8 (NEW): Link to User -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="250"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Link to User:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox x:Name="cmbUsersLink"
+                                  Grid.Column="1"
+                                  DisplayMemberPath="Username"
+                                  SelectedValuePath="UserID"
+                                  Width="250"/>
+
+                        <TextBlock Grid.Column="3" Text="(Optional) pick existing login to link" VerticalAlignment="Center" Foreground="#666"/>
                     </Grid>
 
                 </StackPanel>

@@ -5,89 +5,101 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="800">
-	<UserControl.Resources>
-		<!-- Style for NavigationButton to resolve the errors -->
-		<Style x:Key="NavigationButton" TargetType="Button">
-			<Setter Property="Background" Value="#007ACC"/>
-			<Setter Property="Foreground" Value="White"/>
-			<Setter Property="FontWeight" Value="Bold"/>
-			<Setter Property="Padding" Value="10"/>
-			<Setter Property="BorderBrush" Value="#005C9A"/>
-			<Setter Property="BorderThickness" Value="1"/>
-			<Setter Property="Cursor" Value="Hand"/>
-			<Setter Property="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="Button">
-						<Border Background="{TemplateBinding Background}"
+    <UserControl.Resources>
+        <Style x:Key="NavigationButton" TargetType="Button">
+            <Setter Property="Background" Value="#007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderBrush" Value="#005C9A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="5">
-							<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-						</Border>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
-			<Style.Triggers>
-				<Trigger Property="IsMouseOver" Value="True">
-					<Setter Property="Background" Value="#005C9A"/>
-				</Trigger>
-			</Style.Triggers>
-		</Style>
-	</UserControl.Resources>
-	<Grid Background="#F0F0F0">
-		<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="600">
-			<TextBlock Text="⚙️ Hospital Settings"
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#005C9A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#F0F0F0">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="600">
+            <!-- Use XML entity for the gear to avoid encoding issues -->
+            <TextBlock Text="&#x2699; Hospital Settings"
                        FontSize="20"
                        FontWeight="Bold"
                        Margin="0,0,0,20"
                        HorizontalAlignment="Center"/>
 
-			<Grid Margin="0,10">
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="*"/>
-				</Grid.ColumnDefinitions>
-				<Grid.RowDefinitions>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-				</Grid.RowDefinitions>
+            <Grid Margin="0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-				<Label Content="Hospital Name:" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtHospitalName" Grid.Row="0" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Hospital Name:" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtHospitalName" Grid.Row="0" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Address:" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtAddress" Grid.Row="1" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Address:" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtAddress" Grid.Row="1" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Contact Phone:" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtContactPhone" Grid.Row="2" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Contact Phone:" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtContactPhone" Grid.Row="2" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Hospital Email:" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtHospitalEmail" Grid.Row="3" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Hospital Email:" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtHospitalEmail" Grid.Row="3" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Website:" Grid.Row="4" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtWebsite" Grid.Row="4" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Website:" Grid.Row="4" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtWebsite" Grid.Row="4" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="License Number:" Grid.Row="5" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtLicenseNumber" Grid.Row="5" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="License Number:" Grid.Row="5" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtLicenseNumber" Grid.Row="5" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Default Currency:" Grid.Row="6" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtDefaultCurrency" Grid.Row="6" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Default Currency:" Grid.Row="6" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtDefaultCurrency" Grid.Row="6" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Time Zone:" Grid.Row="7" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtTimeZone" Grid.Row="7" Grid.Column="1" Height="30" Padding="5"/>
+                <Label Content="Time Zone:" Grid.Row="7" Grid.Column="0" Margin="0,5"/>
+                <TextBox x:Name="txtTimeZone" Grid.Row="7" Grid.Column="1" Height="30" Padding="5"/>
 
-				<Label Content="Logo Path:" Grid.Row="8" Grid.Column="0" Margin="0,5"/>
-				<TextBox x:Name="txtLogoPath" Grid.Row="8" Grid.Column="1" Height="30" Padding="5"/>
-			</Grid>
+                <!-- Logo Path with Browse button -->
+                <Label Content="Logo Path:" Grid.Row="8" Grid.Column="0" Margin="0,5"/>
+                <Grid Grid.Row="8" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtLogoPath" Height="30" Padding="5" Grid.Column="0" Margin="0,0,6,0"/>
+                    <Button Content="Browse..." Width="90" Grid.Column="1" Click="BtnBrowseLogo_Click"/>
+                </Grid>
+            </Grid>
 
-			<Button Content="Save Settings" Margin="0,20,0,0" Style="{StaticResource NavigationButton}" Click ="btnSaveSettings_Click"/>
-		</StackPanel>
-	</Grid>
+            <Button Content="Save Settings"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource NavigationButton}"
+                    Click="btnSaveSettings_Click"/>
+        </StackPanel>
+    </Grid>
 </UserControl>

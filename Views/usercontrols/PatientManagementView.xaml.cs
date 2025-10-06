@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -32,12 +32,12 @@ namespace HospitalManagementSystem.Views.UserControls
         {
             InitializeComponent();
             Patients = new ObservableCollection<Patient>();
-            this.DataContext = this;
-
+            DataContext = this;
             LoadPatientsFromDatabase();
+            _ = LoadUnlinkedUsersAsync();
         }
 
-        // ------- UI Validation helpers -------
+        // ===== helpers for UI validation =====
         private static void MarkInvalid(Control c, string tip)
         {
             if (c == null) return;
@@ -71,7 +71,7 @@ namespace HospitalManagementSystem.Views.UserControls
             ClearInvalid(txtMedicalConditions);
         }
 
-        // ------- Load -------
+        // ===== Load =====
         private async void LoadPatientsFromDatabase()
         {
             try
@@ -83,7 +83,7 @@ namespace HospitalManagementSystem.Views.UserControls
 SELECT PatientID, PatientCode, FirstName, LastName, DOB, Gender, Phone, Email, Address, 
        EmergencyContact, EmergencyPhone, InsuranceProvider, InsuranceNumber, BloodType, Allergies, 
        MedicalConditions, CreatedDate, IsActive 
-FROM Patients";
+FROM dbo.Patients";
                     using (var command = new SqlCommand(sqlQuery, connection))
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -128,7 +128,84 @@ FROM Patients";
             }
         }
 
-        // ------- Add -------
+        // ===== Users dropdown =====
+        private sealed class UserOption { public int UserID { get; set; } public string Username { get; set; } }
+
+        /// <summary>
+        /// Loads users that are NOT linked to any patient.
+        /// For editing, we'll add the current linked user (if any) separately.
+        /// </summary>
+        private async Task LoadUnlinkedUsersAsync(int? includeUserId = null)
+        {
+            try
+            {
+                using (var con = new SqlConnection(connectionString))
+                using (var cmd = new SqlCommand(@"
+SELECT u.UserID, u.Username
+FROM dbo.Users u
+LEFT JOIN dbo.Patients p ON p.UserID = u.UserID
+WHERE p.UserID IS NULL
+ORDER BY u.Username;", con))
+                {
+                    await con.OpenAsync();
+                    var list = new List<UserOption>();
+                    using (var r = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await r.ReadAsync())
+                        {
+                            list.Add(new UserOption
+                            {
+                                UserID = Convert.ToInt32(r["UserID"]),
+                                Username = r["Username"]?.ToString()
+                            });
+                        }
+                    }
+
+                    // If editing and the patient already has a linked user, include it
+                    if (includeUserId.HasValue && list.All(x => x.UserID != includeUserId.Value))
+                    {
+                        using (var addCmd = new SqlCommand(
+                            "SELECT UserID, Username FROM dbo.Users WHERE UserID=@id", con))
+                        {
+                            addCmd.Parameters.AddWithValue("@id", includeUserId.Value);
+                            using (var r = await addCmd.ExecuteReaderAsync())
+                            {
+                                if (await r.ReadAsync())
+                                {
+                                    list.Insert(0, new UserOption
+                                    {
+                                        UserID = Convert.ToInt32(r["UserID"]),
+                                        Username = r["Username"]?.ToString()
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    cmbUsersLink.ItemsSource = list;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-blocking; just show a light message
+                Console.WriteLine("LoadUnlinkedUsersAsync failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>Get the UserID currently linked to a patient (or null).</summary>
+        private async Task<int?> GetLinkedUserIdAsync(int patientId)
+        {
+            using (var con = new SqlConnection(connectionString))
+            using (var cmd = new SqlCommand("SELECT UserID FROM dbo.Patients WHERE PatientID=@id", con))
+            {
+                await con.OpenAsync();
+                cmd.Parameters.AddWithValue("@id", patientId);
+                var v = await cmd.ExecuteScalarAsync();
+                return (v == null || v == DBNull.Value) ? (int?)null : Convert.ToInt32(v);
+            }
+        }
+
+        // ===== Add =====
         private async void AddPatientButton_Click(object sender, RoutedEventArgs e)
         {
             ClearAllValidation();
@@ -138,8 +215,13 @@ FROM Patients";
             try
             {
                 toAdd.CreatedDate = DateTime.Now;
-                int newId = await AddPatientToDatabase(toAdd); // get IDENTITY
+
+                int? userIdToLink = cmbUsersLink.SelectedValue as int?;
+                int newId = await AddPatientToDatabase(toAdd, userIdToLink); // identity id
                 toAdd.PatientID = newId;
+
+                // After add, refresh dropdown (the just-linked user disappears)
+                await LoadUnlinkedUsersAsync();
 
                 Patients.Add(toAdd);
                 MessageBox.Show($"Patient '{toAdd.FirstName} {toAdd.LastName}' added successfully.",
@@ -152,7 +234,7 @@ FROM Patients";
             }
         }
 
-        // ------- Update -------
+        // ===== Update =====
         private async void UpdatePatientButton_Click(object sender, RoutedEventArgs e)
         {
             if (!(PatientsDataGrid.SelectedItem is Patient selectedPatient))
@@ -171,10 +253,13 @@ FROM Patients";
 
             try
             {
-                await UpdatePatientInDatabase(updatedCandidate);
+                int? userIdToLink = cmbUsersLink.SelectedValue as int?;
+                await UpdatePatientInDatabase(updatedCandidate, userIdToLink);
+
+                // If link changed, reload dropdown list
+                await LoadUnlinkedUsersAsync(await GetLinkedUserIdAsync(updatedCandidate.PatientID));
 
                 CopyPatient(updatedCandidate, selectedPatient);
-
                 MessageBox.Show($"Patient '{selectedPatient.FirstName} {selectedPatient.LastName}' has been updated.",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -185,7 +270,7 @@ FROM Patients";
             }
         }
 
-        // ------- Delete -------
+        // ===== Delete =====
         private async void DeletePatientButton_Click(object sender, RoutedEventArgs e)
         {
             if (!(PatientsDataGrid.SelectedItem is Patient selectedPatient))
@@ -205,6 +290,8 @@ FROM Patients";
             {
                 await DeletePatientFromDatabase(selectedPatient);
                 Patients.Remove(selectedPatient);
+                // After delete, refresh dropdown (freed user becomes unlinked)
+                await LoadUnlinkedUsersAsync();
                 MessageBox.Show($"Patient '{selectedPatient.FirstName} {selectedPatient.LastName}' has been deleted.",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -215,7 +302,7 @@ FROM Patients";
             }
         }
 
-        // ------- Search -------
+        // ===== Search by ID =====
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             if (!int.TryParse(txtSearch.Text, out var patientId))
@@ -227,8 +314,8 @@ FROM Patients";
             await SearchPatientInDatabase(patientId);
         }
 
-        // ------- Selection changed: populate form -------
-        private void PatientsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // ===== selection to form =====
+        private async void PatientsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (PatientsDataGrid.SelectedItem is Patient selectedPatient)
             {
@@ -260,11 +347,16 @@ FROM Patients";
                 txtMedicalConditions.Text = selectedPatient.MedicalConditions;
                 chkIsActive.IsChecked = selectedPatient.IsActive;
 
+                // Load users and select current link (if any)
+                int? currentLink = await GetLinkedUserIdAsync(selectedPatient.PatientID);
+                await LoadUnlinkedUsersAsync(currentLink);
+                cmbUsersLink.SelectedValue = currentLink;
+
                 ClearAllValidation();
             }
         }
 
-        // ------- Build + validate -------
+        // ===== build + validate model =====
         private bool TryBuildPatientFromInputs(out Patient patient, bool isUpdate, int existingId = 0)
         {
             patient = null;
@@ -308,10 +400,7 @@ FROM Patients";
             else
             {
                 var today = DateTime.Today;
-                if (dob.Value.Date > today)
-                {
-                    AddErr("Date of Birth cannot be in the future.", dpDOB, ref firstInvalid, sb);
-                }
+                if (dob.Value.Date > today) AddErr("Date of Birth cannot be in the future.", dpDOB, ref firstInvalid, sb);
                 else
                 {
                     int age = today.Year - dob.Value.Year;
@@ -339,7 +428,7 @@ FROM Patients";
             if (string.IsNullOrWhiteSpace(address) || address.Length < AddressMinLen || address.Length > AddressMaxLen)
                 AddErr($"Address is required (length {AddressMinLen}-{AddressMaxLen}).", txtAddress, ref firstInvalid, sb);
 
-            // Emergency phone (optional) with dependency
+            // Emergency phone (optional)
             string emergencyPhoneNormalized = null;
             if (!string.IsNullOrWhiteSpace(emergencyPhoneRaw))
             {
@@ -357,11 +446,11 @@ FROM Patients";
             if (insuranceNumber.Length > MaxInsuranceNumber)
                 AddErr($"Insurance Number is too long (max {MaxInsuranceNumber}).", txtInsuranceNumber, ref firstInvalid, sb);
 
-            // Blood type (optional, must be valid if provided)
+            // Blood type (optional)
             if (!string.IsNullOrWhiteSpace(bloodType) && !AllowedBloodTypes.Contains(bloodType))
                 AddErr("Blood Type must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-.", txtBloodType, ref firstInvalid, sb);
 
-            // Text caps
+            // Caps
             if (allergies.Length > MaxAllergies)
                 AddErr($"Allergies text is too long (max {MaxAllergies}).", txtAllergies, ref firstInvalid, sb);
             if (medicalConditions.Length > MaxMedical)
@@ -375,7 +464,6 @@ FROM Patients";
                 return false;
             }
 
-            // Build Patient model (store normalized phone(s))
             patient = new Patient
             {
                 PatientID = isUpdate ? existingId : 0,
@@ -384,27 +472,23 @@ FROM Patients";
                 LastName = lastName,
                 DOB = dob ?? DateTime.Today,
                 Gender = gender,
-                Phone = phoneNormalized,                   // normalized
+                Phone = phoneNormalized,
                 Email = email,
                 Address = address,
                 EmergencyContact = emergencyContact,
-                EmergencyPhone = emergencyPhoneNormalized, // normalized or null
+                EmergencyPhone = emergencyPhoneNormalized,
                 InsuranceProvider = insuranceProvider,
                 InsuranceNumber = insuranceNumber,
                 BloodType = bloodType,
                 Allergies = allergies,
                 MedicalConditions = medicalConditions,
-                // CreatedDate set during Add; preserved during Update
                 IsActive = isActive
             };
             return true;
         }
 
         /// <summary>
-        /// Phone validation:
-        /// - Without country code: exactly 10 digits (format characters ignored).
-        /// - With country code: must start with '+', then 1–3 digit country code, then 10-digit number.
-        /// Returns normalized: "1234567890" or "+<cc><10digits>".
+        /// Phone validation + normalization.
         /// </summary>
         private static bool TryValidatePhoneNumber(string raw, bool required, out string normalized, out string error)
         {
@@ -418,7 +502,7 @@ FROM Patients";
                     error = "Phone is required. Enter 10 digits (e.g., 9876543210) or include country code (e.g., +91 9876543210).";
                     return false;
                 }
-                return true; // optional empty OK
+                return true;
             }
 
             string trimmed = raw.Trim();
@@ -427,16 +511,15 @@ FROM Patients";
 
             if (hasPlus)
             {
-                // +<1-3 digits country code><10 digits>
                 if (digitsOnly.Length < 11 || digitsOnly.Length > 13)
                 {
-                    error = "With country code, use +<1–3 digit country code> + 10-digit number (e.g., +1 5551234567, +91 9876543210).";
+                    error = "With country code, use +<1–3 digit country code> + 10-digit number.";
                     return false;
                 }
                 int ccLen = digitsOnly.Length - 10;
                 if (ccLen < 1 || ccLen > 3)
                 {
-                    error = "Country code must be 1–3 digits followed by a 10-digit number (e.g., +44 7123456789).";
+                    error = "Country code must be 1–3 digits followed by a 10-digit number.";
                     return false;
                 }
                 normalized = "+" + digitsOnly;
@@ -483,38 +566,40 @@ FROM Patients";
             dst.IsActive = src.IsActive;
         }
 
-        // ------- DB Ops -------
-        private async Task<int> AddPatientToDatabase(Patient patient)
+        // ===== DB Ops =====
+
+        private async Task<int> AddPatientToDatabase(Patient patient, int? userIdToLink)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
                 string sql = @"
-INSERT INTO Patients 
-(PatientCode, FirstName, LastName, DOB, Gender, Phone, Email, Address, 
- EmergencyContact, EmergencyPhone, InsuranceProvider, InsuranceNumber, 
- BloodType, Allergies, MedicalConditions, CreatedDate, IsActive)
+INSERT INTO dbo.Patients 
+    (PatientCode, FirstName, LastName, DOB, Gender, Phone, Email, Address, 
+     EmergencyContact, EmergencyPhone, InsuranceProvider, InsuranceNumber, 
+     BloodType, Allergies, MedicalConditions, CreatedDate, IsActive, UserID)
 OUTPUT INSERTED.PatientID
 VALUES 
-(@PatientCode, @FirstName, @LastName, @DOB, @Gender, @Phone, @Email, @Address, 
- @EmergencyContact, @EmergencyPhone, @InsuranceProvider, @InsuranceNumber, 
- @BloodType, @Allergies, @MedicalConditions, @CreatedDate, @IsActive)";
+    (@PatientCode, @FirstName, @LastName, @DOB, @Gender, @Phone, @Email, @Address, 
+     @EmergencyContact, @EmergencyPhone, @InsuranceProvider, @InsuranceNumber, 
+     @BloodType, @Allergies, @MedicalConditions, @CreatedDate, @IsActive, @UserID)";
                 using (var cmd = new SqlCommand(sql, connection))
                 {
-                    AddParams(cmd, patient);
+                    AddParams(cmd, patient, userIdToLink);
                     var result = await cmd.ExecuteScalarAsync();
-                    return (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
+                    int newId = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt32(result);
+                    return newId;
                 }
             }
         }
 
-        private async Task UpdatePatientInDatabase(Patient patient)
+        private async Task UpdatePatientInDatabase(Patient patient, int? userIdToLink)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
                 string sql = @"
-UPDATE Patients SET
+UPDATE dbo.Patients SET
     PatientCode=@PatientCode,
     FirstName=@FirstName,
     LastName=@LastName,
@@ -530,11 +615,12 @@ UPDATE Patients SET
     BloodType=@BloodType,
     Allergies=@Allergies,
     MedicalConditions=@MedicalConditions,
-    IsActive=@IsActive
+    IsActive=@IsActive,
+    UserID=@UserID
 WHERE PatientID=@PatientID";
                 using (var cmd = new SqlCommand(sql, connection))
                 {
-                    AddParams(cmd, patient);
+                    AddParams(cmd, patient, userIdToLink);
                     cmd.Parameters.AddWithValue("@PatientID", patient.PatientID);
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -546,7 +632,7 @@ WHERE PatientID=@PatientID";
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                string sql = "DELETE FROM Patients WHERE PatientID=@PatientID";
+                string sql = "DELETE FROM dbo.Patients WHERE PatientID=@PatientID";
                 using (var cmd = new SqlCommand(sql, connection))
                 {
                     cmd.Parameters.AddWithValue("@PatientID", patient.PatientID);
@@ -566,7 +652,7 @@ WHERE PatientID=@PatientID";
 SELECT PatientID, PatientCode, FirstName, LastName, DOB, Gender, Phone, Email, Address, 
        EmergencyContact, EmergencyPhone, InsuranceProvider, InsuranceNumber, BloodType, Allergies, 
        MedicalConditions, CreatedDate, IsActive 
-FROM Patients WHERE PatientID=@PatientID";
+FROM dbo.Patients WHERE PatientID=@PatientID";
                     using (var cmd = new SqlCommand(sqlQuery, connection))
                     {
                         cmd.Parameters.AddWithValue("@PatientID", patientId);
@@ -597,6 +683,11 @@ FROM Patients WHERE PatientID=@PatientID";
                                     IsActive = SafeGetBool(reader, 17)
                                 };
                                 Patients.Add(p);
+
+                                // ensure dropdown shows current link
+                                int? currentLink = await GetLinkedUserIdAsync(p.PatientID);
+                                await LoadUnlinkedUsersAsync(currentLink);
+                                cmbUsersLink.SelectedValue = currentLink;
                             }
                             else
                             {
@@ -619,7 +710,7 @@ FROM Patients WHERE PatientID=@PatientID";
             }
         }
 
-        private static void AddParams(SqlCommand cmd, Patient p)
+        private static void AddParams(SqlCommand cmd, Patient p, int? userId)
         {
             cmd.Parameters.AddWithValue("@PatientCode", (object)NullIfEmpty(p.PatientCode) ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@FirstName", (object)NullIfEmpty(p.FirstName) ?? DBNull.Value);
@@ -638,6 +729,10 @@ FROM Patients WHERE PatientID=@PatientID";
             cmd.Parameters.AddWithValue("@MedicalConditions", (object)NullIfEmpty(p.MedicalConditions) ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@CreatedDate", p.CreatedDate);
             cmd.Parameters.AddWithValue("@IsActive", p.IsActive);
+
+            // C# 7.3-friendly way to pass nullable int
+            object userIdValue = userId.HasValue ? (object)userId.Value : DBNull.Value;
+            cmd.Parameters.AddWithValue("@UserID", userIdValue);
         }
 
         private static string NullIfEmpty(string s) => string.IsNullOrWhiteSpace(s) ? null : s;

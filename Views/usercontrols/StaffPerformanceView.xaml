@@ -4,22 +4,133 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Background="#F0F0F0">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="600">
-            <TextBlock Text="👨‍💼 Staff Performance Report"
-                       FontSize="20"
-                       FontWeight="Bold"
-                       Margin="0,0,0,20"
-                       HorizontalAlignment="Center"/>
-            <TextBlock Text="This section will provide insights into staff productivity and performance."
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center"
-                       Margin="0,0,0,20"/>
-            <Border BorderBrush="LightGray" BorderThickness="1" Height="250" Margin="10" Padding="10">
-                <TextBlock Text="[Placeholder for Staff Performance Data]" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="Gray"/>
-            </Border>
+             d:DesignHeight="700" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <!-- Style for KPI cards, reused from Financial Analytics View -->
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#DDDDDD" Direction="270" ShadowDepth="2" BlurRadius="5" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Title -->
+            <RowDefinition Height="Auto"/>
+            <!-- KPI Cards -->
+            <RowDefinition Height="*"/>
+            <!-- Charts and Details -->
+        </Grid.RowDefinitions>
+
+        <!-- ROW 0: Title and Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,25">
+            <TextBlock Text="Staff Performance &amp; Efficiency Dashboard" 
+                       FontSize="26" 
+                       FontWeight="Bold" 
+                       Foreground="#005696"/>
+            <TextBlock Text="Metrics for the last 30 days" 
+                       FontSize="14" 
+                       Foreground="#666666"
+                       Margin="0,5,0,0"/>
         </StackPanel>
+
+        <!-- ROW 1: Key Performance Indicator (KPI) Cards -->
+        <Grid Grid.Row="1" Margin="0,0,0,30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- KPI 1: Patient Satisfaction Score -->
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="Patient Satisfaction" FontSize="14" Foreground="#005696"/>
+                    <TextBlock Text="4.7 / 5.0" FontSize="30" FontWeight="Bold" Margin="0,5,0,0" Foreground="#2A6848"/>
+                    <TextBlock Text="+0.1 vs Last Month" FontSize="12" Foreground="#4CAF50"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 2: On-Time Chart Completion -->
+            <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="On-Time Charting Rate" FontSize="14" Foreground="#005696"/>
+                    <TextBlock Text="92.5%" FontSize="30" FontWeight="Bold" Margin="0,5,0,0" Foreground="#007ACC"/>
+                    <TextBlock Text="Target: 90%" FontSize="12" Foreground="#666666"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 3: Average Patient Wait Time -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="Avg. Patient Wait Time" FontSize="14" Foreground="#005696"/>
+                    <TextBlock Text="18 Minutes" FontSize="30" FontWeight="Bold" Margin="0,5,0,0" Foreground="#FF8C00"/>
+                    <TextBlock Text="+2 Min vs Target" FontSize="12" Foreground="#DC3545"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 4: Staff Turnover Rate -->
+            <Border Grid.Column="3" Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="Staff Turnover Rate (YTD)" FontSize="14" Foreground="#005696"/>
+                    <TextBlock Text="5.8%" FontSize="30" FontWeight="Bold" Margin="0,5,0,0" Foreground="#DC3545"/>
+                    <TextBlock Text="-1.2% vs Last Year" FontSize="12" Foreground="#4CAF50"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ROW 2: Charts and Detailed Data -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- Department Comparison -->
+                <ColumnDefinition Width="*"/>
+                <!-- Individual Performance Grid -->
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT COLUMN: Departmental Performance Comparison -->
+            <Border Grid.Column="0" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Margin="0,0,15,0" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Departmental Satisfaction Ranking" FontSize="18" FontWeight="SemiBold" Foreground="#333333" Margin="0,0,0,10"/>
+
+                    <!-- Placeholder for Chart -->
+                    <Border Height="350" Background="#F8F8F8" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="5">
+                        <TextBlock Text="[Chart Placeholder: Satisfaction Score by Department (Bar Chart)]" 
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center" 
+                                   Foreground="#999999" 
+                                   FontStyle="Italic"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- RIGHT COLUMN: Individual Staff Performance Grid -->
+            <Border Grid.Column="1" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Top &amp; Bottom Performers" FontSize="18" FontWeight="SemiBold" Foreground="#333333" Margin="0,0,0,10"/>
+
+                    <!-- Placeholder for Data Grid -->
+                    <Border Height="350" Background="#F8F8F8" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="5">
+                        <TextBlock Text="[Data Grid Placeholder: List of Staff with Key Metrics]" 
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center" 
+                                   Foreground="#999999" 
+                                   FontStyle="Italic"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

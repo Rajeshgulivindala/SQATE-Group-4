@@ -11,43 +11,73 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section: Binds to HospitalSettings -->
+        <!-- Header -->
         <Border Grid.Row="0" Background="#E9ECEF" Padding="20">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Hospital Logo (Placeholder/Binding) -->
-                <Image x:Name="HospitalLogoImage" 
-                       Width="80" Height="80" 
-                       Margin="0,0,20,0" 
-                       Source="{Binding HospitalSettings.LogoPath}"
-                       VerticalAlignment="Top"/>
-
+                <Image x:Name="HospitalLogoImage" Width="80" Height="80"
+                       Margin="0,0,20,0" VerticalAlignment="Top"
+                       Stretch="UniformToFill"/>
                 <StackPanel VerticalAlignment="Center">
-                    <!-- Hospital Name (Real-Time Binding) -->
-                    <TextBlock Text="{Binding HospitalSettings.Name}" 
-                               FontSize="28" 
-                               FontWeight="Bold" 
-                               Foreground="#2C3E50"/>
-
-                    <!-- Hospital Address (Real-Time Binding) -->
-                    <TextBlock Text="{Binding HospitalSettings.Address}" 
-                               FontSize="14" 
+                    <TextBlock x:Name="TxtHospitalName" FontSize="28"
+                               FontWeight="Bold" Foreground="#2C3E50"/>
+                    <TextBlock x:Name="TxtHospitalAddress" FontSize="14"
                                Foreground="#7F8C8D"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
-        <!-- Main Dashboard Content (Welcome Message) -->
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,0">
-            <TextBlock Text="Welcome to the Hospital Dashboard" 
-                       FontSize="36" 
-                       FontWeight="Bold" 
-                       Foreground="#2C3E50" 
-                       Margin="0,0,0,10" 
-                       HorizontalAlignment="Center"/>
-            <TextBlock Text="KRR Healthcare Center" 
-                       FontSize="18" 
-                       Foreground="#7F8C8D" 
-                       HorizontalAlignment="Center"/>
-        </StackPanel>
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel HorizontalAlignment="Center" Margin="20" Width="900">
+                <TextBlock Text="Welcome to the Hospital Dashboard" 
+                           FontSize="36" FontWeight="Bold"
+                           Foreground="#2C3E50" HorizontalAlignment="Center"
+                           Margin="0,12,0,4"/>
+                <TextBlock x:Name="TxtSubtitleName" FontSize="18"
+                           Foreground="#7F8C8D" HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+
+                <!-- Details Card -->
+                <Border Background="White" Padding="16" CornerRadius="8"
+                        BorderBrush="#E0E0E0" BorderThickness="1" >
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Contact Phone:" Grid.Row="0" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock x:Name="TxtPhone" Grid.Row="0" Grid.Column="1" Margin="0,6"/>
+
+                        <TextBlock Text="Hospital Email:" Grid.Row="1" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Margin="0,6">
+                            <Hyperlink x:Name="LinkEmail" RequestNavigate="LinkEmail_RequestNavigate">-</Hyperlink>
+                        </TextBlock>
+
+                        <TextBlock Text="Website:" Grid.Row="2" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Margin="0,6">
+                            <Hyperlink x:Name="LinkWebsite" RequestNavigate="LinkWebsite_RequestNavigate">-</Hyperlink>
+                        </TextBlock>
+
+                        <TextBlock Text="License Number:" Grid.Row="3" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock x:Name="TxtLicense" Grid.Row="3" Grid.Column="1" Margin="0,6"/>
+
+                        <TextBlock Text="Default Currency:" Grid.Row="4" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock x:Name="TxtCurrency" Grid.Row="4" Grid.Column="1" Margin="0,6"/>
+
+                        <TextBlock Text="Time Zone:" Grid.Row="5" Grid.Column="0" Margin="0,6" Foreground="#607D8B"/>
+                        <TextBlock x:Name="TxtTimezone" Grid.Row="5" Grid.Column="1" Margin="0,6"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

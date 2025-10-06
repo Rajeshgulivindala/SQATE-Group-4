@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using HospitalManagementSystem.Services.Data; // <-- add this
 
 namespace HospitalManagementSystem.Views.UserControls
 {
@@ -61,6 +62,12 @@ namespace HospitalManagementSystem.Views.UserControls
             cmbType.ItemsSource = AllowedTypes;
             cmbStatus.ItemsSource = AllowedStatuses;
 
+            // 🔔 Auto-refresh staff list whenever staff are added in StaffManagementView
+            StaffRepository.StaffUpserted += async (_, __) =>
+            {
+                await LoadStaffDropdownAsync();
+            };
+
             Loaded += async (_, __) =>
             {
                 await LoadPatientDropdownAsync(); // shows PatientCode — Name (fallback to ID)
@@ -112,7 +119,7 @@ ORDER BY COALESCE(PatientCode, CAST(PatientID AS varchar(20))), FirstName, LastN
                 }
                 catch (SqlException)
                 {
-                    // fall through to no-code query
+                    // fall-through to no-code query
                 }
 
                 // Fallback: table without PatientCode column
