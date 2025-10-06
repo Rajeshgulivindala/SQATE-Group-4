@@ -44,13 +44,7 @@ namespace HospitalManagementSystem.Views.UserControls
         private static string GetString(IDataRecord r, params string[] names)
         {
             foreach (var n in names)
-            {
-                if (HasColumn(r, n))
-                {
-                    var v = r[n];
-                    if (v != DBNull.Value) return v.ToString();
-                }
-            }
+                if (HasColumn(r, n) && r[n] != DBNull.Value) return r[n].ToString();
             return null;
         }
 
@@ -58,20 +52,16 @@ namespace HospitalManagementSystem.Views.UserControls
         {
             foreach (var n in names)
             {
-                if (HasColumn(r, n))
-                {
-                    var v = r[n];
-                    if (v != DBNull.Value)
-                    {
-                        if (v is DateTime dt) return dt;
-                        if (DateTime.TryParse(v.ToString(), out var parsed)) return parsed;
-                    }
-                }
+                if (!HasColumn(r, n)) continue;
+                var v = r[n];
+                if (v == DBNull.Value) continue;
+                if (v is DateTime dt) return dt;
+                if (DateTime.TryParse(v.ToString(), out var parsed)) return parsed;
             }
             return null;
         }
 
-        private async Task<bool> ColumnExistsAsync(SqlConnection con, string table, string column)
+        private static async Task<bool> ColumnExistsAsync(SqlConnection con, string table, string column)
         {
             using (var cmd = new SqlCommand(
                 @"SELECT 1 FROM sys.columns c 
@@ -104,12 +94,12 @@ namespace HospitalManagementSystem.Views.UserControls
                 {
                     await con.OpenAsync();
 
-                    // 1) Resolve UserID from Users by Username (NO Email here)
+                    // 1) Resolve UserID by Username
                     UserRow user = null;
                     using (var userCmd = new SqlCommand(
                         @"SELECT TOP(1) UserID, Username 
                           FROM dbo.Users 
-                          WHERE Username = @u", con))
+                          WHERE Username = @u AND IsActive = 1", con))
                     {
                         userCmd.Parameters.AddWithValue("@u", username);
                         using (var r = await userCmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
@@ -127,35 +117,28 @@ namespace HospitalManagementSystem.Views.UserControls
 
                     if (user == null)
                     {
-                        TxtInfo.Text = "No linked user record found.";
+                        TxtInfo.Text = "No active user record found.";
                         return;
                     }
 
-                    // 2) Build WHERE strategy for Patients:
-                    //    Prefer Patients.UserID if it exists; otherwise try Patients.Username
-                    string whereClause;
+                    // 2) Prefer Patients.UserID else Patients.Username
                     SqlCommand pCmd;
-
-                    bool hasUserId = await ColumnExistsAsync(con, "Patients", "UserID");
-                    if (hasUserId)
+                    if (await ColumnExistsAsync(con, "Patients", "UserID"))
                     {
-                        whereClause = "UserID = @uid";
-                        pCmd = new SqlCommand($@"SELECT TOP(1) * FROM dbo.Patients WHERE {whereClause}", con);
+                        pCmd = new SqlCommand(
+                            @"SELECT TOP(1) * FROM dbo.Patients WHERE UserID = @uid", con);
                         pCmd.Parameters.AddWithValue("@uid", user.UserId);
+                    }
+                    else if (await ColumnExistsAsync(con, "Patients", "Username"))
+                    {
+                        pCmd = new SqlCommand(
+                            @"SELECT TOP(1) * FROM dbo.Patients WHERE Username = @uname", con);
+                        pCmd.Parameters.AddWithValue("@uname", user.Username);
                     }
                     else
                     {
-                        // Fall back to username match if Patients.Username exists
-                        bool hasUsername = await ColumnExistsAsync(con, "Patients", "Username");
-                        if (!hasUsername)
-                        {
-                            TxtInfo.Text = "Patient linking not found (no Patients.UserID or Patients.Username). Ask your doctor to link your profile.";
-                            return;
-                        }
-
-                        whereClause = "Username = @uname";
-                        pCmd = new SqlCommand($@"SELECT TOP(1) * FROM dbo.Patients WHERE {whereClause}", con);
-                        pCmd.Parameters.AddWithValue("@uname", user.Username);
+                        TxtInfo.Text = "Patient linking not found (no Patients.UserID or Patients.Username). Ask your doctor to link your profile.";
+                        return;
                     }
 
                     using (var pr = await pCmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
@@ -166,14 +149,11 @@ namespace HospitalManagementSystem.Views.UserControls
                             return;
                         }
 
-                        // Read with aliases to tolerate schema differences
                         TxtCode.Text = GetString(pr, "PatientCode", "Code") ?? "—";
                         TxtFirstName.Text = GetString(pr, "FirstName", "GivenName") ?? "—";
                         TxtLastName.Text = GetString(pr, "LastName", "Surname", "FamilyName") ?? "—";
-
                         var dob = GetDate(pr, "DOB", "DateOfBirth", "BirthDate");
                         TxtDOB.Text = dob.HasValue ? dob.Value.ToShortDateString() : "—";
-
                         TxtGender.Text = GetString(pr, "Gender", "Sex") ?? "—";
                         TxtPhone.Text = GetString(pr, "Phone", "PhoneNumber", "Mobile") ?? "—";
                         TxtEmail.Text = GetString(pr, "Email", "EmailAddress") ?? "—";

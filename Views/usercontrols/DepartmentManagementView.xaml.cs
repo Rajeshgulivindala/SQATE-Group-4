@@ -1,290 +1,245 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace HospitalManagementSystem.Views.UserControls
 {
-    /// <summary>
-    /// Code-behind for DepartmentManagementView.xaml
-    /// </summary>
     public partial class DepartmentManagementView : UserControl
     {
         private readonly string _connectionString =
-            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True;";
 
-        // ---- Validation limits / patterns ----
-        private const int NameMinLen = 2;
-        private const int NameMaxLen = 100;
-        private const int LocationMinLen = 2;
-        private const int LocationMaxLen = 100;
-        private const int DescriptionMaxLen = 1000;
-        private static readonly Regex PhoneRegex = new Regex(@"^\+?[0-9()\-\s]{7,20}$", RegexOptions.Compiled);
+        private readonly ObservableCollection<DepartmentRow> _rows = new ObservableCollection<DepartmentRow>();
 
-        public class Department
-        {
-            public int DepartmentId { get; set; }
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public string Location { get; set; }
-            public string Phone { get; set; }
-            public int HeadOfDept { get; set; }   // staff/employee ID
-            public decimal Budget { get; set; }
-            public bool IsActive { get; set; }
-        }
-
-        public ObservableCollection<Department> Departments { get; } = new ObservableCollection<Department>();
+        // schema cache
+        private bool _checkedSchema;
+        private bool _hasColName;
+        private bool _hasColDepartmentName;
 
         public DepartmentManagementView()
         {
             InitializeComponent();
-            DataContext = this;
 
-            DepartmentsDataGrid.SelectionChanged += DepartmentsDataGrid_SelectionChanged;
-            // Avoid newer discard lambda syntax for max compatibility
-            Loaded += async (s, e) => await LoadDepartmentsFromDatabase();
+            var grid = FindName("DepartmentsDataGrid") as DataGrid;
+            if (grid != null) grid.ItemsSource = _rows;
+
+            _ = LoadDepartmentsAsync();
         }
 
-        // --- Populate inputs when row selected ---
-        private void DepartmentsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        #region Model
+        private sealed class DepartmentRow
         {
-            var d = DepartmentsDataGrid.SelectedItem as Department;
-            if (d != null)
-            {
-                txtName.Text = d.Name ?? "";
-                txtDescription.Text = d.Description ?? "";
-                txtLocation.Text = d.Location ?? "";
-                txtPhone.Text = d.Phone ?? "";
-                txtHeadOfDept.Text = d.HeadOfDept.ToString(CultureInfo.InvariantCulture);
-                txtBudget.Text = d.Budget.ToString(CultureInfo.InvariantCulture);
-                chkIsActive.IsChecked = d.IsActive;
+            public int DepartmentID { get; set; }
+            public string Name { get; set; } // unified display
+            public string Description { get; set; }
+            public string Location { get; set; }
+            public string Phone { get; set; }
+            public int? HeadOfDept { get; set; }
+            public decimal Budget { get; set; }
+            public bool IsActive { get; set; }
+        }
+        #endregion
 
-                ClearValidation();
+        #region UI helpers
+        private string GetText(string name)
+        {
+            var tb = FindName(name) as TextBox;
+            return tb == null ? string.Empty : (tb.Text ?? string.Empty).Trim();
+        }
+        private bool GetBool(string name)
+        {
+            var cb = FindName(name) as CheckBox;
+            return cb?.IsChecked == true;
+        }
+        private DataGrid GetGrid() => FindName("DepartmentsDataGrid") as DataGrid;
+        private static string NullIfEmpty(string s) => string.IsNullOrWhiteSpace(s) ? null : s;
+        #endregion
+
+        #region Schema detection
+        private async Task EnsureSchemaAsync(SqlConnection external = null)
+        {
+            if (_checkedSchema) return;
+
+            bool openedHere = false;
+            var con = external ?? new SqlConnection(_connectionString);
+            try
+            {
+                if (con.State != ConnectionState.Open)
+                {
+                    await con.OpenAsync();
+                    openedHere = true;
+                }
+
+                using (var cmd = new SqlCommand(@"
+SELECT c.name
+FROM sys.columns c
+JOIN sys.objects o ON o.object_id = c.object_id
+WHERE o.type='U' AND o.name='Departments' AND c.name IN ('Name','DepartmentName');", con))
+                using (var r = await cmd.ExecuteReaderAsync())
+                {
+                    while (await r.ReadAsync())
+                    {
+                        var n = r["name"].ToString();
+                        if (string.Equals(n, "Name", StringComparison.OrdinalIgnoreCase)) _hasColName = true;
+                        if (string.Equals(n, "DepartmentName", StringComparison.OrdinalIgnoreCase)) _hasColDepartmentName = true;
+                    }
+                }
+
+                if (!_hasColName && !_hasColDepartmentName)
+                    throw new InvalidOperationException("Departments table must contain a 'Name' or 'DepartmentName' column.");
+            }
+            finally
+            {
+                _checkedSchema = true;
+                if (openedHere) con.Dispose();
             }
         }
+        #endregion
 
-        // --- Load data ---
-        private async Task LoadDepartmentsFromDatabase()
+        #region Load
+        private async Task LoadDepartmentsAsync()
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                using (var con = new SqlConnection(_connectionString))
                 {
-                    await connection.OpenAsync();
-                    const string sql = @"
-SELECT DepartmentId, Name, Description, Location, Phone, HeadOfDept, Budget, IsActive
-FROM Departments
-ORDER BY Name;";
+                    await con.OpenAsync();
+                    await EnsureSchemaAsync(con);
 
-                    using (var cmd = new SqlCommand(sql, connection))
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    // Build SELECT with COALESCE of whichever columns exist
+                    string selNameExpr;
+                    if (_hasColName && _hasColDepartmentName)
+                        selNameExpr = "COALESCE([DepartmentName],[Name])";
+                    else if (_hasColDepartmentName)
+                        selNameExpr = "[DepartmentName]";
+                    else
+                        selNameExpr = "[Name]";
+
+                    using (var cmd = new SqlCommand($@"
+SELECT DepartmentID,
+       {selNameExpr} AS DeptName,
+       Description, Location, Phone, HeadOfDept, Budget, IsActive
+FROM dbo.Departments
+ORDER BY DeptName;", con))
+                    using (var r = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection))
                     {
-                        Departments.Clear();
-                        while (await reader.ReadAsync())
+                        _rows.Clear();
+                        while (await r.ReadAsync())
                         {
-                            var dept = new Department
+                            _rows.Add(new DepartmentRow
                             {
-                                DepartmentId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                Description = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                Location = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                                Phone = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                                HeadOfDept = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
-                                Budget = reader.IsDBNull(6) ? 0m : reader.GetDecimal(6),
-                                IsActive = !reader.IsDBNull(7) && reader.GetBoolean(7)
-                            };
-                            Departments.Add(dept);
+                                DepartmentID = r["DepartmentID"] == DBNull.Value ? 0 : Convert.ToInt32(r["DepartmentID"]),
+                                Name = r["DeptName"] == DBNull.Value ? string.Empty : r["DeptName"].ToString(),
+                                Description = r["Description"] == DBNull.Value ? null : r["Description"].ToString(),
+                                Location = r["Location"] == DBNull.Value ? null : r["Location"].ToString(),
+                                Phone = r["Phone"] == DBNull.Value ? null : r["Phone"].ToString(),
+                                HeadOfDept = r["HeadOfDept"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["HeadOfDept"]),
+                                Budget = r["Budget"] == DBNull.Value ? 0m : Convert.ToDecimal(r["Budget"]),
+                                IsActive = r["IsActive"] != DBNull.Value && Convert.ToBoolean(r["IsActive"])
+                            });
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load departments: {ex.Message}", "Error",
+                MessageBox.Show("Failed to load departments: " + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // === VALIDATION HELPERS =======================================================
-
-        private void ClearValidation()
-        {
-            MarkValid(txtName);
-            MarkValid(txtDescription);
-            MarkValid(txtLocation);
-            MarkValid(txtPhone);
-            MarkValid(txtHeadOfDept);
-            MarkValid(txtBudget);
-        }
-
-        private static void MarkInvalid(Control c, string msg)
-        {
-            if (c == null) return;
-            c.BorderBrush = Brushes.Red;
-            c.BorderThickness = new Thickness(1.5);
-            c.ToolTip = msg;
-        }
-
-        private static void MarkValid(Control c)
-        {
-            if (c == null) return;
-            c.ClearValue(Border.BorderBrushProperty);
-            c.ClearValue(Border.BorderThicknessProperty);
-            c.ToolTip = null;
-        }
-
-        /// <summary>
-        /// Read inputs and validate every required field. If valid, outputs a Department.
-        /// </summary>
-        private bool TryReadInputs(out Department dept, bool requireExisting)
-        {
-            ClearValidation();
-            dept = null;
-            int deptId = 0;
-
-            if (requireExisting)
-            {
-                var sel = DepartmentsDataGrid.SelectedItem as Department;
-                if (sel == null)
-                {
-                    MessageBox.Show("Select a department in the table first.", "No Selection",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-                deptId = sel.DepartmentId;
-            }
-
-            var errors = new StringBuilder();
-            Control firstInvalid = null;
-
-            string name = (txtName.Text ?? "").Trim();
-            string description = (txtDescription.Text ?? "").Trim();
-            string location = (txtLocation.Text ?? "").Trim();
-            string phone = (txtPhone.Text ?? "").Trim();
-            string headText = (txtHeadOfDept.Text ?? "").Trim();
-            string budgetText = (txtBudget.Text ?? "").Trim();
-            bool isActive = chkIsActive.IsChecked ?? true;
-
-            // ---- Name (required, length) ----
-            if (string.IsNullOrWhiteSpace(name) || name.Length < NameMinLen || name.Length > NameMaxLen)
-            {
-                var msg = string.Format("Name is required (length {0}-{1}).", NameMinLen, NameMaxLen);
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtName, msg);
-                if (firstInvalid == null) firstInvalid = txtName;
-            }
-            else
-            {
-                // naive in-memory uniqueness check (case-insensitive)
-                foreach (var d in Departments)
-                {
-                    if (!requireExisting || d.DepartmentId != deptId)
-                    {
-                        if (string.Equals((d.Name ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var msg = "A department with this name already exists.";
-                            errors.AppendLine("• " + msg);
-                            MarkInvalid(txtName, msg);
-                            if (firstInvalid == null) firstInvalid = txtName;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // ---- Description (optional, max len) ----
-            if (description.Length > DescriptionMaxLen)
-            {
-                var msg = string.Format("Description is too long (max {0} characters).", DescriptionMaxLen);
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtDescription, msg);
-                if (firstInvalid == null) firstInvalid = txtDescription;
-            }
-
-            // ---- Location (required, length) ----
-            if (string.IsNullOrWhiteSpace(location) || location.Length < LocationMinLen || location.Length > LocationMaxLen)
-            {
-                var msg = string.Format("Location is required (length {0}-{1}).", LocationMinLen, LocationMaxLen);
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtLocation, msg);
-                if (firstInvalid == null) firstInvalid = txtLocation;
-            }
-
-            // ---- Phone (required, basic pattern) ----
-            if (string.IsNullOrWhiteSpace(phone) || !PhoneRegex.IsMatch(phone))
-            {
-                var msg = "Phone is required (digits, spaces, (), -, optional +).";
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtPhone, msg);
-                if (firstInvalid == null) firstInvalid = txtPhone;
-            }
-
-            // ---- HeadOfDept (required, positive int) ----
-            int headId;
-            if (!int.TryParse(headText, NumberStyles.Integer, CultureInfo.InvariantCulture, out headId) || headId <= 0)
-            {
-                var msg = "Head of Dept must be a positive integer (staff/employee ID).";
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtHeadOfDept, msg);
-                if (firstInvalid == null) firstInvalid = txtHeadOfDept;
-            }
-
-            // ---- Budget (required, non-negative decimal; clamp to 2 dp) ----
-            decimal budget;
-            if (!decimal.TryParse(budgetText, NumberStyles.Number, CultureInfo.InvariantCulture, out budget) || budget < 0m)
-            {
-                var msg = "Budget must be a non-negative number (e.g., 1000.00).";
-                errors.AppendLine("• " + msg);
-                MarkInvalid(txtBudget, msg);
-                if (firstInvalid == null) firstInvalid = txtBudget;
-            }
-            else
-            {
-                budget = decimal.Round(budget, 2, MidpointRounding.AwayFromZero);
-            }
-
-            if (errors.Length > 0)
-            {
-                MessageBox.Show("Please fix the following:\n\n" + errors, "Invalid Input",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                if (firstInvalid != null) firstInvalid.Focus();
-                return false;
-            }
-
-            // All good
-            dept = new Department
-            {
-                DepartmentId = deptId,
-                Name = name,
-                Description = description,
-                Location = location,
-                Phone = phone,
-                HeadOfDept = headId,
-                Budget = budget,
-                IsActive = isActive
-            };
-            return true;
-        }
-
-        // --- Add ---
+        #region Add
         private async void AddDepartmentButton_Click(object sender, RoutedEventArgs e)
         {
-            Department newDept;
-            if (!TryReadInputs(out newDept, false)) return;
+            var name = GetText("txtDepartmentName");
+            if (string.IsNullOrWhiteSpace(name)) name = GetText("txtName"); // support either textbox name
+
+            var description = GetText("txtDescription");
+            var location = GetText("txtLocation");
+            var phone = GetText("txtPhone");
+            var headTxt = GetText("txtHeadOfDept");
+            var budgetTxt = GetText("txtBudget");
+            var isActive = GetBool("chkIsActive");
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                MessageBox.Show("Department name is required.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int? head = null;
+            if (!string.IsNullOrWhiteSpace(headTxt))
+            {
+                if (int.TryParse(headTxt, NumberStyles.Integer, CultureInfo.InvariantCulture, out var h)) head = h;
+                else { MessageBox.Show("Head of Dept must be an integer id.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            }
+
+            if (!decimal.TryParse(string.IsNullOrWhiteSpace(budgetTxt) ? "0" : budgetTxt,
+                                  NumberStyles.Number, CultureInfo.InvariantCulture, out var budget))
+            {
+                MessageBox.Show("Budget must be numeric.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             try
             {
-                await AddDepartmentToDatabase(newDept);
-                await LoadDepartmentsFromDatabase();
-                MessageBox.Show(string.Format("Department '{0}' added.", newDept.Name), "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearInputs();
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    await con.OpenAsync();
+                    await EnsureSchemaAsync(con);
+
+                    // Build dynamic column/values list to satisfy NOT NULLs
+                    var nameColumns = new System.Collections.Generic.List<string>();
+                    if (_hasColName) nameColumns.Add("[Name]");
+                    if (_hasColDepartmentName) nameColumns.Add("[DepartmentName]");
+
+                    var nameValues = string.Join(", ", nameColumns.Select(_ => "@NameValue"));
+                    var nameCols = string.Join(", ", nameColumns);
+
+                    var sql = $@"
+INSERT INTO dbo.Departments
+    ({nameCols}, Description, Location, Phone, HeadOfDept, Budget, IsActive)
+VALUES
+    ({nameValues}, @Description, @Location, @Phone, @HeadOfDept, @Budget, @IsActive);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    using (var cmd = new SqlCommand(sql, con))
+                    {
+                        cmd.Parameters.Add("@NameValue", SqlDbType.NVarChar, 150).Value = name; // fill all name-ish columns
+                        cmd.Parameters.Add("@Description", SqlDbType.NVarChar, 500).Value = (object)NullIfEmpty(description) ?? DBNull.Value;
+                        cmd.Parameters.Add("@Location", SqlDbType.NVarChar, 200).Value = (object)NullIfEmpty(location) ?? DBNull.Value;
+                        cmd.Parameters.Add("@Phone", SqlDbType.NVarChar, 50).Value = (object)NullIfEmpty(phone) ?? DBNull.Value;
+                        cmd.Parameters.Add("@HeadOfDept", SqlDbType.Int).Value = (object)head ?? DBNull.Value;
+                        cmd.Parameters.Add("@Budget", SqlDbType.Money).Value = budget;
+                        cmd.Parameters.Add("@IsActive", SqlDbType.Bit).Value = isActive;
+
+                        var newId = (int)await cmd.ExecuteScalarAsync();
+
+                        _rows.Add(new DepartmentRow
+                        {
+                            DepartmentID = newId,
+                            Name = name,
+                            Description = description,
+                            Location = location,
+                            Phone = phone,
+                            HeadOfDept = head,
+                            Budget = budget,
+                            IsActive = isActive
+                        });
+
+                        MessageBox.Show("Department added.", "Success",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -292,19 +247,99 @@ ORDER BY Name;";
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // --- Update ---
+        #region Update
         private async void UpdateDepartmentButton_Click(object sender, RoutedEventArgs e)
         {
-            Department updated;
-            if (!TryReadInputs(out updated, true)) return;
+            var grid = GetGrid();
+            var row = grid?.SelectedItem as DepartmentRow;
+            if (row == null)
+            {
+                MessageBox.Show("Select a department to update.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var name = GetText("txtDepartmentName");
+            if (string.IsNullOrWhiteSpace(name)) name = GetText("txtName");
+            var description = GetText("txtDescription");
+            var location = GetText("txtLocation");
+            var phone = GetText("txtPhone");
+            var headTxt = GetText("txtHeadOfDept");
+            var budgetTxt = GetText("txtBudget");
+            var isActive = GetBool("chkIsActive");
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                MessageBox.Show("Department name is required.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int? head = null;
+            if (!string.IsNullOrWhiteSpace(headTxt))
+            {
+                if (int.TryParse(headTxt, NumberStyles.Integer, CultureInfo.InvariantCulture, out var h)) head = h;
+                else { MessageBox.Show("Head of Dept must be an integer id.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            }
+
+            if (!decimal.TryParse(string.IsNullOrWhiteSpace(budgetTxt) ? "0" : budgetTxt,
+                                  NumberStyles.Number, CultureInfo.InvariantCulture, out var budget))
+            {
+                MessageBox.Show("Budget must be numeric.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             try
             {
-                await UpdateDepartmentInDatabase(updated);
-                await LoadDepartmentsFromDatabase();
-                MessageBox.Show(string.Format("Department '{0}' updated.", updated.Name), "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    await con.OpenAsync();
+                    await EnsureSchemaAsync(con);
+
+                    var setParts = new System.Collections.Generic.List<string>();
+                    if (_hasColName) setParts.Add("[Name] = @NameValue");
+                    if (_hasColDepartmentName) setParts.Add("[DepartmentName] = @NameValue");
+                    setParts.Add("Description = @Description");
+                    setParts.Add("Location = @Location");
+                    setParts.Add("Phone = @Phone");
+                    setParts.Add("HeadOfDept = @HeadOfDept");
+                    setParts.Add("Budget = @Budget");
+                    setParts.Add("IsActive = @IsActive");
+
+                    var sql = $@"
+UPDATE dbo.Departments SET
+    {string.Join(", ", setParts)}
+WHERE DepartmentID = @DepartmentID;";
+
+                    using (var cmd = new SqlCommand(sql, con))
+                    {
+                        cmd.Parameters.Add("@DepartmentID", SqlDbType.Int).Value = row.DepartmentID;
+                        cmd.Parameters.Add("@NameValue", SqlDbType.NVarChar, 150).Value = name;
+                        cmd.Parameters.Add("@Description", SqlDbType.NVarChar, 500).Value = (object)NullIfEmpty(description) ?? DBNull.Value;
+                        cmd.Parameters.Add("@Location", SqlDbType.NVarChar, 200).Value = (object)NullIfEmpty(location) ?? DBNull.Value;
+                        cmd.Parameters.Add("@Phone", SqlDbType.NVarChar, 50).Value = (object)NullIfEmpty(phone) ?? DBNull.Value;
+                        cmd.Parameters.Add("@HeadOfDept", SqlDbType.Int).Value = (object)head ?? DBNull.Value;
+                        cmd.Parameters.Add("@Budget", SqlDbType.Money).Value = budget;
+                        cmd.Parameters.Add("@IsActive", SqlDbType.Bit).Value = isActive;
+
+                        await cmd.ExecuteNonQueryAsync();
+
+                        row.Name = name;
+                        row.Description = description;
+                        row.Location = location;
+                        row.Phone = phone;
+                        row.HeadOfDept = head;
+                        row.Budget = budget;
+                        row.IsActive = isActive;
+                        grid.Items.Refresh();
+
+                        MessageBox.Show("Department updated.", "Success",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -312,33 +347,37 @@ ORDER BY Name;";
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // --- Delete ---
+        #region Delete
         private async void DeleteDepartmentButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = DepartmentsDataGrid.SelectedItem as Department;
-            if (selected == null)
+            var grid = GetGrid();
+            var row = grid?.SelectedItem as DepartmentRow;
+            if (row == null)
             {
-                MessageBox.Show("Select a department to delete.", "No Selection",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Select a department to delete.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var confirm = MessageBox.Show(
-                string.Format("Delete department '{0}' (ID {1})?", selected.Name, selected.DepartmentId),
-                "Confirm Delete",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (confirm != MessageBoxResult.Yes) return;
+            if (MessageBox.Show($"Delete department '{row.Name}'?",
+                                "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
 
             try
             {
-                await DeleteDepartmentFromDatabase(selected.DepartmentId);
-                await LoadDepartmentsFromDatabase();
-                MessageBox.Show(string.Format("Department '{0}' deleted.", selected.Name), "Success",
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand("DELETE FROM dbo.Departments WHERE DepartmentID=@id;", con))
+                {
+                    cmd.Parameters.Add("@id", SqlDbType.Int).Value = row.DepartmentID;
+                    await con.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                _rows.Remove(row);
+                MessageBox.Show("Department deleted.", "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearInputs();
             }
             catch (Exception ex)
             {
@@ -346,81 +385,6 @@ ORDER BY Name;";
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // --- Clear inputs ---
-        private void ClearInputs()
-        {
-            txtName.Clear();
-            txtDescription.Clear();
-            txtLocation.Clear();
-            txtPhone.Clear();
-            txtHeadOfDept.Clear();
-            txtBudget.Clear();
-            chkIsActive.IsChecked = true;
-            DepartmentsDataGrid.SelectedItem = null;
-            ClearValidation();
-        }
-
-        // --- SQL ops ---
-        private async Task AddDepartmentToDatabase(Department department)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                const string sql = @"
-INSERT INTO Departments (Name, Description, Location, Phone, HeadOfDept, Budget, IsActive)
-VALUES (@Name, @Description, @Location, @Phone, @HeadOfDept, @Budget, @IsActive);";
-                using (var cmd = new SqlCommand(sql, connection))
-                {
-                    cmd.Parameters.AddWithValue("@Name", department.Name);
-                    cmd.Parameters.AddWithValue("@Description", department.Description);
-                    cmd.Parameters.AddWithValue("@Location", department.Location);
-                    cmd.Parameters.AddWithValue("@Phone", department.Phone);
-                    cmd.Parameters.AddWithValue("@HeadOfDept", department.HeadOfDept);
-                    cmd.Parameters.AddWithValue("@Budget", department.Budget);
-                    cmd.Parameters.AddWithValue("@IsActive", department.IsActive);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        private async Task UpdateDepartmentInDatabase(Department department)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                const string sql = @"
-UPDATE Departments
-SET Name=@Name, Description=@Description, Location=@Location, Phone=@Phone,
-    HeadOfDept=@HeadOfDept, Budget=@Budget, IsActive=@IsActive
-WHERE DepartmentId=@DepartmentId;";
-                using (var cmd = new SqlCommand(sql, connection))
-                {
-                    cmd.Parameters.AddWithValue("@Name", department.Name);
-                    cmd.Parameters.AddWithValue("@Description", department.Description);
-                    cmd.Parameters.AddWithValue("@Location", department.Location);
-                    cmd.Parameters.AddWithValue("@Phone", department.Phone);
-                    cmd.Parameters.AddWithValue("@HeadOfDept", department.HeadOfDept);
-                    cmd.Parameters.AddWithValue("@Budget", department.Budget);
-                    cmd.Parameters.AddWithValue("@IsActive", department.IsActive);
-                    cmd.Parameters.AddWithValue("@DepartmentId", department.DepartmentId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        private async Task DeleteDepartmentFromDatabase(int departmentId)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                const string sql = "DELETE FROM Departments WHERE DepartmentId=@DepartmentId;";
-                using (var cmd = new SqlCommand(sql, connection))
-                {
-                    cmd.Parameters.AddWithValue("@DepartmentId", departmentId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-        }
+        #endregion
     }
 }

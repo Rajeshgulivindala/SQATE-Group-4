@@ -8,27 +8,28 @@
         Background="#F5F7FB">
     <Grid>
         <Border CornerRadius="14"
-                Background="White"
-                Padding="28"
-                Margin="24"
-                BorderBrush="#E6E9EF" BorderThickness="1">
+            Background="White"
+            Padding="28"
+            Margin="24"
+            BorderBrush="#E6E9EF" BorderThickness="1">
             <StackPanel VerticalAlignment="Center">
+
                 <!-- Title -->
                 <StackPanel Margin="0,0,0,14">
                     <TextBlock Text="Hospital Management System"
-                               FontSize="18" FontWeight="SemiBold" Foreground="#223042"/>
+                     FontSize="18" FontWeight="SemiBold" Foreground="#223042"/>
                     <TextBlock Text="Please sign in to continue"
-                               FontSize="12" Foreground="#6C7A92" Margin="0,2,0,0"/>
+                     FontSize="12" Foreground="#6C7A92" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <!-- Username -->
                 <StackPanel Margin="0,8,0,0">
                     <TextBlock Text="Username" FontSize="12" Foreground="#3B4758"/>
                     <TextBox x:Name="UsernameTextBox"
-                             Height="36"
-                             Padding="10,6"
-                             BorderBrush="#D9DEE8" BorderThickness="1"
-                             Background="#FAFBFE"/>
+                   Height="36"
+                   Padding="10,6"
+                   BorderBrush="#D9DEE8" BorderThickness="1"
+                   Background="#FAFBFE"/>
                 </StackPanel>
 
                 <!-- Password -->
@@ -42,61 +43,61 @@
 
                         <!-- Hidden password -->
                         <PasswordBox x:Name="PasswordBox"
-                                     Grid.Column="0"
-                                     Padding="10,6"
-                                     BorderBrush="#D9DEE8" BorderThickness="1"
-                                     Background="#FAFBFE"
-                                     PasswordChanged="PasswordBox_PasswordChanged"/>
+                         Grid.Column="0"
+                         Padding="10,6"
+                         BorderBrush="#D9DEE8" BorderThickness="1"
+                         Background="#FAFBFE"
+                         PasswordChanged="PasswordBox_PasswordChanged"/>
 
                         <!-- Revealed password -->
                         <TextBox x:Name="PasswordRevealTextBox"
-                                 Grid.Column="0"
-                                 Padding="10,6"
-                                 BorderBrush="#D9DEE8" BorderThickness="1"
-                                 Background="#FAFBFE"
-                                 Visibility="Collapsed"
-                                 TextChanged="PasswordRevealTextBox_TextChanged"/>
+                     Grid.Column="0"
+                     Padding="10,6"
+                     BorderBrush="#D9DEE8" BorderThickness="1"
+                     Background="#FAFBFE"
+                     Visibility="Collapsed"
+                     TextChanged="PasswordRevealTextBox_TextChanged"/>
 
                         <!-- Show/Hide -->
                         <CheckBox x:Name="ShowPasswordCheckBox"
-                                  Grid.Column="1"
-                                  Margin="8,0,0,0"
-                                  VerticalAlignment="Center"
-                                  Content="Show"
-                                  Checked="ShowPasswordCheckBox_Checked"
-                                  Unchecked="ShowPasswordCheckBox_Unchecked"/>
+                      Grid.Column="1"
+                      Margin="8,0,0,0"
+                      VerticalAlignment="Center"
+                      Content="Show"
+                      Checked="ShowPasswordCheckBox_Checked"
+                      Unchecked="ShowPasswordCheckBox_Unchecked"/>
                     </Grid>
                 </StackPanel>
 
                 <!-- Error + Progress -->
                 <StackPanel Margin="0,8,0,0">
                     <TextBlock x:Name="ErrorMessageText"
-                               Foreground="#D64545"
-                               FontSize="12"
-                               TextWrapping="Wrap"/>
+                     Foreground="#D64545"
+                     FontSize="12"
+                     TextWrapping="Wrap"/>
                     <ProgressBar x:Name="LoadingProgressBar"
-                                 Height="2"
-                                 Margin="0,6,0,0"
-                                 Visibility="Collapsed"
-                                 IsIndeterminate="True"/>
+                       Height="2"
+                       Margin="0,6,0,0"
+                       Visibility="Collapsed"
+                       IsIndeterminate="True"/>
                 </StackPanel>
 
                 <!-- Actions -->
                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left">
                     <Button x:Name="LoginButton"
-                            Content="LOGIN"
-                            Height="38" MinWidth="120"
-                            Background="#2E7DFF" Foreground="White"
-                            FontWeight="SemiBold"
-                            BorderThickness="0"
-                            Click="LoginButton_Click"
-                            IsDefault="True"/>
+                  Content="LOGIN"
+                  Height="38" MinWidth="120"
+                  Background="#2E7DFF" Foreground="White"
+                  FontWeight="SemiBold"
+                  BorderThickness="0"
+                  Click="LoginButton_Click"
+                  IsDefault="True"/>
                 </StackPanel>
 
                 <TextBlock Text="Tip: Press Enter to sign in"
-                           Foreground="#9AA6B2"
-                           FontSize="11"
-                           Margin="0,8,0,0"/>
+                   Foreground="#9AA6B2"
+                   FontSize="11"
+                   Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
     </Grid>

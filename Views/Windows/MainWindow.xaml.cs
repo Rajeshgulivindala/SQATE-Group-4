@@ -14,143 +14,122 @@ namespace HospitalManagementSystem.Views.Windows
         }
 
         /// <summary>
-        /// Hide/show sections based on role.
+        /// Show/hide sidebar sections based on role.
         /// </summary>
         private void InitializeUserInterface()
         {
-            string role = AuthenticationService.CurrentUser?.Role ?? "";
+            string role = AuthenticationService.CurrentUser?.Role ?? string.Empty;
 
-            // Default: show admin sections
-            UserExpander.Visibility = Visibility.Visible;
-            SystemExpander.Visibility = Visibility.Visible;
-            ReportsExpander.Visibility = Visibility.Visible;
+            // Hide all by default
+            UserExpander.Visibility = Visibility.Collapsed;
+            SystemExpander.Visibility = Visibility.Collapsed;
+            ReportsExpander.Visibility = Visibility.Collapsed;
             DoctorExpander.Visibility = Visibility.Collapsed;
             NurseExpander.Visibility = Visibility.Collapsed;
             ClerkExpander.Visibility = Visibility.Collapsed;
+            InventoryExpander.Visibility = Visibility.Collapsed;
             PatientExpander.Visibility = Visibility.Collapsed;
 
             switch (role)
             {
                 case "Admin":
-                    // admin sees admin sections only (already set)
+                    UserExpander.Visibility = Visibility.Visible;
+                    SystemExpander.Visibility = Visibility.Visible;
+                    ReportsExpander.Visibility = Visibility.Visible;
+                    InventoryExpander.Visibility = Visibility.Visible; // optional
                     break;
 
                 case "Doctor":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
                     DoctorExpander.Visibility = Visibility.Visible;
                     break;
 
                 case "Nurse":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
                     NurseExpander.Visibility = Visibility.Visible;
                     break;
 
                 case "Clerk":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
                     ClerkExpander.Visibility = Visibility.Visible;
+                    InventoryExpander.Visibility = Visibility.Visible; // if clerks manage inventory
                     break;
 
                 case "Patient":
-                    // Only the patient menu is visible for patients
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
-                    DoctorExpander.Visibility = Visibility.Collapsed;
-                    NurseExpander.Visibility = Visibility.Collapsed;
-                    ClerkExpander.Visibility = Visibility.Collapsed;
                     PatientExpander.Visibility = Visibility.Visible;
                     break;
 
                 default:
-                    // unknown role -> minimalist view
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
-                    DoctorExpander.Visibility = Visibility.Collapsed;
-                    NurseExpander.Visibility = Visibility.Collapsed;
-                    ClerkExpander.Visibility = Visibility.Collapsed;
-                    PatientExpander.Visibility = Visibility.Collapsed;
+                    // Unknown role: keep minimal UI (dashboard only)
                     break;
             }
         }
 
         /// <summary>
-        /// Load a sensible default view for each role.
-        /// Patients go straight to "My Profile".
+        /// Route to a sensible default per role.
+        /// Patients go to My Profile; others to Dashboard.
         /// </summary>
         private void ShowDefaultForRole()
         {
-            string role = AuthenticationService.CurrentUser?.Role ?? "";
+            string role = AuthenticationService.CurrentUser?.Role ?? string.Empty;
 
             if (role == "Patient")
-            {
                 MainContentArea.Content = new PatientSelfView();
-            }
             else
-            {
-                // Keep your original dashboard as the default elsewhere
                 MainContentArea.Content = new DashboardView();
-            }
         }
 
-
         /// <summary>
-        /// Handles all sidebar navigation.
+        /// Centralized navigation by Tag.
         /// </summary>
         private void NavigationButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button btn)
+            if (sender is System.Windows.Controls.Button button)
             {
-                string tag = (btn.Tag ?? "").ToString().ToLowerInvariant();
+                string tag = (button.Tag ?? string.Empty).ToString().ToLowerInvariant();
 
                 switch (tag)
                 {
-                    case "dashboard":
-                        MainContentArea.Content = new DashboardView();
-                        break;
+                    // Common
+                    case "dashboard": MainContentArea.Content = new DashboardView(); break;
 
-                    // Admin & Staff (kept from your previous routes)
+                    // Patient
+                    case "patientprofile": MainContentArea.Content = new PatientSelfView(); break;
+
+                    // Clinical
+                    case "patientmanagement": MainContentArea.Content = new PatientManagementView(); break;
+                    case "appointmentmanagement": MainContentArea.Content = new AppointmentManagementView(); break;
+                    case "medicalrecords": MainContentArea.Content = new MedicalRecordsView(); break;
+                    case "shiftmanagement": MainContentArea.Content = new ShiftManagementView(); break;
+
+                    // Admin - users
                     case "registeruser": MainContentArea.Content = new RegisterUserView(); break;
                     case "modifyroles": MainContentArea.Content = new ModifyRolesView(); break;
                     case "deactivateusers": MainContentArea.Content = new DeactivateUsersView(); break;
                     case "passwordreset": MainContentArea.Content = new PasswordResetView(); break;
                     case "staffmanagement": MainContentArea.Content = new StaffManagementView(); break;
 
+                    // Admin - system
                     case "departmentmanagement": MainContentArea.Content = new DepartmentManagementView(); break;
                     case "roommanagement": MainContentArea.Content = new RoomManagementView(); break;
                     case "hospitalsettings": MainContentArea.Content = new HospitalSettingsView(); break;
                     case "backupmaintenance": MainContentArea.Content = new BackupMaintenanceView(); break;
                     case "communication": MainContentArea.Content = new CommunicationManagementView(); break;
 
+                    // Reports
+                    case "systemusage": MainContentArea.Content = new SystemUsageView(); break;
                     case "financialanalytics": MainContentArea.Content = new FinancialAnalyticsView(); break;
                     case "staffperformance": MainContentArea.Content = new StaffPerformanceView(); break;
                     case "auditlogs": MainContentArea.Content = new AuditLogsView(); break;
-                    case "systemusage": MainContentArea.Content = new SystemUsageView(); break;
 
-                    case "patientmanagement": MainContentArea.Content = new PatientManagementView(); break;
-                    case "appointmentmanagement": MainContentArea.Content = new AppointmentManagementView(); break;
-                    case "medicalrecords": MainContentArea.Content = new MedicalRecordsView(); break;
-                    case "shiftmanagement": MainContentArea.Content = new ShiftManagementView(); break;
+                    // Inventory
                     case "suppliermanagement": MainContentArea.Content = new SupplierManagementView(); break;
                     case "stockmonitoring": MainContentArea.Content = new StockMonitoringView(); break;
                     case "purchaseorders": MainContentArea.Content = new PurchaseOrdersView(); break;
                     case "purchaseapprovals": MainContentArea.Content = new PurchaseApprovalsView(); break;
+
+                    // Billing
                     case "billing": MainContentArea.Content = new BillingManagementView(); break;
 
-                    // Patient only
-                    case "patientprofile":
-                        MainContentArea.Content = new PatientSelfView();
-                        break;
-                    
-
                     default:
-                        // no-op
+                        System.Diagnostics.Debug.WriteLine("Unhandled navigation tag: " + tag);
                         break;
                 }
             }

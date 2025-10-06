@@ -1,293 +1,394 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using HospitalManagementSystem.Models; // reuse your PurchaseOrder model
 
 namespace HospitalManagementSystem.Views.UserControls
 {
-    /// <summary>
-    /// Represents a purchase order data model.
-    /// This is the "Model" in the MVVM pattern.
-    /// </summary>
-    
-    /// <summary>
-    /// The ViewModel that handles all data and logic for the PurchaseOrdersView.
-    /// This class is the core of the solution, separating UI from business logic.
-    /// </summary>
+    public sealed class SupplierOption
+    {
+        public int SupplierId { get; set; }
+        public string Display { get; set; }
+    }
+
     public class PurchaseOrdersViewModel : INotifyPropertyChanged
     {
-        // The connection string is now private to the ViewModel, so the View cannot access it directly.
-        private readonly string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True;";
+        private readonly string _connectionString =
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True;";
 
-        private ObservableCollection<PurchaseOrder> _purchaseOrders;
-        public ObservableCollection<PurchaseOrder> PurchaseOrders
-        {
-            get => _purchaseOrders;
-            set
-            {
-                _purchaseOrders = value;
-                OnPropertyChanged();
-            }
-        }
+        public ObservableCollection<PurchaseOrder> PurchaseOrders { get; } = new ObservableCollection<PurchaseOrder>();
+        public ObservableCollection<SupplierOption> SupplierOptions { get; } = new ObservableCollection<SupplierOption>();
 
         private PurchaseOrder _selectedPurchaseOrder;
         public PurchaseOrder SelectedPurchaseOrder
         {
             get => _selectedPurchaseOrder;
-            set
-            {
-                _selectedPurchaseOrder = value;
-                OnPropertyChanged();
-                PopulateForm();
-            }
+            set { _selectedPurchaseOrder = value; PopulateForm(); OnPropertyChanged(); }
         }
 
-        // Properties that the UI will bind to.
+        private int? _selectedSupplierId;
+        public int? SelectedSupplierId
+        {
+            get => _selectedSupplierId;
+            set { _selectedSupplierId = value; OnPropertyChanged(); }
+        }
+
         public string OrderIdText { get; set; }
-        public string SupplierIdText { get; set; }
         public DateTime? OrderDate { get; set; }
         public string TotalAmountText { get; set; }
         public string DescriptionText { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = "Draft";
+        public int NextOrderId { get; private set; }
 
-        public PurchaseOrdersViewModel()
+        public async Task InitAsync()
         {
-            PurchaseOrders = new ObservableCollection<PurchaseOrder>();
-            ClearForm();
+            await LoadSuppliersAsync();          // fill the dropdown
+            await LoadPurchaseOrdersAsync();     // fill the grid
+            await ComputeNextOrderIdAsync();
         }
 
-        /// <summary>
-        /// Loads all purchase orders from the database.
-        /// </summary>
+        // ---------- DB helpers ----------
+        private static async Task<bool> TableExistsAsync(SqlConnection con, string tableName)
+        {
+            using (var cmd = new SqlCommand("SELECT 1 FROM sys.objects WHERE type='U' AND name=@t", con))
+            {
+                cmd.Parameters.AddWithValue("@t", tableName);
+                var res = await cmd.ExecuteScalarAsync();
+                return res != null;
+            }
+        }
+
+        private static async Task<string> FirstExistingColumnAsync(SqlConnection con, string table, params string[] candidates)
+        {
+            using (var cmd = new SqlCommand(@"
+SELECT TOP(1) c.name
+FROM sys.columns c
+JOIN sys.objects o ON o.object_id = c.object_id
+WHERE o.type='U' AND o.name=@t AND (" +
+"c.name=@c0 OR c.name=@c1 OR c.name=@c2 OR c.name=@c3)", con))
+            {
+                cmd.Parameters.AddWithValue("@t", table);
+                // pad to 4 params to keep the above SQL simple
+                for (int i = 0; i < 4; i++)
+                {
+                    var val = i < candidates.Length ? (object)candidates[i] : DBNull.Value;
+                    cmd.Parameters.AddWithValue("@c" + i, val);
+                }
+                var v = await cmd.ExecuteScalarAsync();
+                return v == null || v == DBNull.Value ? null : v.ToString();
+            }
+        }
+        // --------------------------------
+
+        // ---------- Suppliers (robust + fallbacks) ----------
+        private async Task LoadSuppliersAsync()
+        {
+            SupplierOptions.Clear();
+            try
+            {
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    await con.OpenAsync();
+
+                    // try plural then singular
+                    string suppliersTable = null;
+                    if (await TableExistsAsync(con, "Suppliers")) suppliersTable = "Suppliers";
+                    else if (await TableExistsAsync(con, "Supplier")) suppliersTable = "Supplier";
+
+                    if (suppliersTable != null)
+                    {
+                        // Detect ID and display columns
+                        var idCol = await FirstExistingColumnAsync(con, suppliersTable, "SupplierID", "SupplierId");
+                        if (string.IsNullOrEmpty(idCol)) idCol = "SupplierID"; // best guess
+
+                        var nameCol = await FirstExistingColumnAsync(con, suppliersTable, "SupplierName", "Name", "CompanyName");
+                        string sql;
+                        if (!string.IsNullOrEmpty(nameCol))
+                        {
+                            sql = $"SELECT [{idCol}] AS Id, CAST([{nameCol}] AS nvarchar(4000)) AS Display FROM dbo.[{suppliersTable}] ORDER BY Display";
+                        }
+                        else
+                        {
+                            sql = $"SELECT [{idCol}] AS Id, 'Supplier ' + CAST([{idCol}] AS nvarchar(32)) AS Display FROM dbo.[{suppliersTable}] ORDER BY Id";
+                        }
+
+                        using (var cmd = new SqlCommand(sql, con))
+                        using (var r = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await r.ReadAsync())
+                            {
+                                SupplierOptions.Add(new SupplierOption
+                                {
+                                    SupplierId = Convert.ToInt32(r["Id"]),
+                                    Display = r["Display"]?.ToString()
+                                });
+                            }
+                        }
+                    }
+
+                    // Fallback: derive from PurchaseOrders
+                    if (SupplierOptions.Count == 0)
+                    {
+                        // detect SupplierId column name in PurchaseOrders
+                        var poIdCol = await FirstExistingColumnAsync(con, "PurchaseOrders", "SupplierId", "SupplierID") ?? "SupplierId";
+                        var sql = $"SELECT DISTINCT [{poIdCol}] AS Id FROM dbo.PurchaseOrders WHERE [{poIdCol}] IS NOT NULL ORDER BY Id";
+
+                        using (var cmd = new SqlCommand(sql, con))
+                        using (var r = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await r.ReadAsync())
+                            {
+                                var id = Convert.ToInt32(r["Id"]);
+                                SupplierOptions.Add(new SupplierOption { SupplierId = id, Display = "Supplier " + id });
+                            }
+                        }
+                    }
+                }
+
+                // optional: select first supplier by default if none selected
+                if (SupplierOptions.Count > 0 && !SelectedSupplierId.HasValue)
+                {
+                    SelectedSupplierId = SupplierOptions[0].SupplierId;
+                    OnPropertyChanged(nameof(SelectedSupplierId));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not load suppliers.\n\n" + ex.Message, "Suppliers",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        // -----------------------------------------------------
+
         public async Task LoadPurchaseOrdersAsync()
         {
             PurchaseOrders.Clear();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(
+                    "SELECT OrderId, SupplierId, OrderDate, TotalAmount, Description, Status, CreatedDate, UpdatedDate FROM dbo.PurchaseOrders ORDER BY OrderId", con))
                 {
-                    await connection.OpenAsync();
-                    string sqlQuery = "SELECT OrderId, SupplierId, OrderDate, TotalAmount, Description, Status, CreatedDate, UpdatedDate FROM PurchaseOrders";
-                    using (var command = new SqlCommand(sqlQuery, connection))
+                    await con.OpenAsync();
+                    using (var r = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
+                        while (await r.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            PurchaseOrders.Add(new PurchaseOrder
                             {
-                                PurchaseOrders.Add(new PurchaseOrder
-                                {
-                                    OrderId = reader.GetInt32(0),
-                                    SupplierId = reader.GetInt32(1),
-                                    OrderDate = reader.GetDateTime(2),
-                                    TotalAmount = reader.GetDecimal(3),
-                                    Description = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                    Status = reader.GetString(5),
-                                    CreatedDate = reader.GetDateTime(6),
-                                    UpdatedDate = reader.GetDateTime(7)
-                                });
-                            }
+                                OrderId = r.GetInt32(0),
+                                SupplierId = r.GetInt32(1),
+                                OrderDate = r.GetDateTime(2),
+                                TotalAmount = r.GetDecimal(3),
+                                Description = r.IsDBNull(4) ? null : r.GetString(4),
+                                Status = r.GetString(5),
+                                CreatedDate = r.GetDateTime(6),
+                                UpdatedDate = r.GetDateTime(7)
+                            });
                         }
                     }
                 }
             }
-            catch (SqlException ex)
-            {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load purchase orders: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to load purchase orders: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles adding a new purchase order.
-        /// </summary>
+        private async Task ComputeNextOrderIdAsync()
+        {
+            try
+            {
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand("SELECT ISNULL(MAX(OrderId), 0) + 1 FROM dbo.PurchaseOrders", con))
+                {
+                    await con.OpenAsync();
+                    NextOrderId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                    OnPropertyChanged(nameof(NextOrderId));
+                }
+            }
+            catch { /* non-fatal */ }
+        }
+
         public async Task AddPurchaseOrderAsync()
         {
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(@"
+INSERT INTO dbo.PurchaseOrders
+    (SupplierId, OrderDate, TotalAmount, Description, Status, CreatedDate, UpdatedDate)
+VALUES
+    (@SupplierId, @OrderDate, @TotalAmount, @Description, @Status, GETDATE(), GETDATE());", con))
                 {
-                    await connection.OpenAsync();
-                    string sql = @"INSERT INTO PurchaseOrders (SupplierId, OrderDate, TotalAmount, Description, Status, CreatedDate, UpdatedDate)
-                                   VALUES (@SupplierId, @OrderDate, @TotalAmount, @Description, @Status, GETDATE(), GETDATE());";
-                    using (var command = new SqlCommand(sql, connection))
+                    if (!TryAddParameters(cmd, out string err))
                     {
-                        AddParameters(command);
-                        await command.ExecuteNonQueryAsync();
+                        MessageBox.Show(err, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
                     }
+
+                    await con.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
-                MessageBox.Show("Purchase order added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                MessageBox.Show("Purchase order added successfully.", "Success",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+
                 await LoadPurchaseOrdersAsync();
+                await ComputeNextOrderIdAsync();
                 ClearForm();
             }
             catch (SqlException ex)
             {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to add purchase order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to add purchase order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles updating an existing purchase order.
-        /// </summary>
         public async Task UpdatePurchaseOrderAsync()
         {
             if (SelectedPurchaseOrder == null) return;
+
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(@"
+UPDATE dbo.PurchaseOrders SET
+    SupplierId = @SupplierId,
+    OrderDate  = @OrderDate,
+    TotalAmount= @TotalAmount,
+    Description= @Description,
+    Status     = @Status,
+    UpdatedDate= GETDATE()
+WHERE OrderId = @OrderId;", con))
                 {
-                    await connection.OpenAsync();
-                    string sql = @"UPDATE PurchaseOrders SET SupplierId = @SupplierId, OrderDate = @OrderDate, TotalAmount = @TotalAmount, Description = @Description, Status = @Status, UpdatedDate = GETDATE()
-                                   WHERE OrderId = @OrderId;";
-                    using (var command = new SqlCommand(sql, connection))
+                    if (!TryAddParameters(cmd, out string err))
                     {
-                        AddParameters(command);
-                        command.Parameters.AddWithValue("@OrderId", SelectedPurchaseOrder.OrderId);
-                        await command.ExecuteNonQueryAsync();
+                        MessageBox.Show(err, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
                     }
+
+                    cmd.Parameters.AddWithValue("@OrderId", SelectedPurchaseOrder.OrderId);
+
+                    await con.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
-                MessageBox.Show("Purchase order updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                MessageBox.Show("Purchase order updated successfully.", "Success",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+
                 await LoadPurchaseOrdersAsync();
                 ClearForm();
             }
             catch (SqlException ex)
             {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to update purchase order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to update purchase order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles deleting a purchase order.
-        /// </summary>
         public async Task DeletePurchaseOrderAsync()
         {
             if (SelectedPurchaseOrder == null) return;
 
-            var result = MessageBox.Show($"Are you sure you want to delete this purchase order?", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result != MessageBoxResult.Yes) return;
+            if (MessageBox.Show("Delete this purchase order?", "Confirm",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand("DELETE FROM dbo.PurchaseOrders WHERE OrderId=@id", con))
                 {
-                    await connection.OpenAsync();
-                    string sql = "DELETE FROM PurchaseOrders WHERE OrderId = @OrderId;";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@OrderId", SelectedPurchaseOrder.OrderId);
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    cmd.Parameters.AddWithValue("@id", SelectedPurchaseOrder.OrderId);
+                    await con.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
-                MessageBox.Show("Purchase order deleted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
                 await LoadPurchaseOrdersAsync();
+                await ComputeNextOrderIdAsync();
                 ClearForm();
             }
             catch (SqlException ex)
             {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to delete purchase order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to delete purchase order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Handles the "Submit for Approval" action.
-        /// </summary>
         public async Task SubmitForApprovalAsync()
         {
             if (SelectedPurchaseOrder == null)
             {
-                MessageBox.Show("Please select a purchase order to submit for approval.", "No Order Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Select an order first.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-
             if (SelectedPurchaseOrder.Status == "Submitted" || SelectedPurchaseOrder.Status == "Approved")
             {
-                MessageBox.Show("This purchase order has already been submitted or approved.", "Status Unchanged", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("This order is already submitted/approved.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-
             await ChangeStatusAsync("Submitted");
         }
 
-        /// <summary>
-        /// Handles the "Approve" action.
-        /// </summary>
-        public async Task ApproveAsync()
-        {
-            if (SelectedPurchaseOrder == null) return;
-            await ChangeStatusAsync("Approved");
-        }
+        public Task ApproveAsync() => SelectedPurchaseOrder == null ? Task.CompletedTask : ChangeStatusAsync("Approved");
+        public Task RejectAsync() => SelectedPurchaseOrder == null ? Task.CompletedTask : ChangeStatusAsync("Rejected");
 
-        /// <summary>
-        /// Handles the "Reject" action.
-        /// </summary>
-        public async Task RejectAsync()
-        {
-            if (SelectedPurchaseOrder == null) return;
-            await ChangeStatusAsync("Rejected");
-        }
-
-        /// <summary>
-        /// Helper method to change the status of the selected order.
-        /// </summary>
         private async Task ChangeStatusAsync(string newStatus)
         {
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(
+                    "UPDATE dbo.PurchaseOrders SET Status=@s, UpdatedDate=GETDATE() WHERE OrderId=@id", con))
                 {
-                    await connection.OpenAsync();
-                    string sql = @"UPDATE PurchaseOrders SET Status = @Status, UpdatedDate = GETDATE() WHERE OrderId = @OrderId;";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@Status", newStatus);
-                        command.Parameters.AddWithValue("@OrderId", SelectedPurchaseOrder.OrderId);
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    cmd.Parameters.AddWithValue("@s", newStatus);
+                    cmd.Parameters.AddWithValue("@id", SelectedPurchaseOrder.OrderId);
+                    await con.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
-                MessageBox.Show($"Purchase order status changed to '{newStatus}' successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
                 await LoadPurchaseOrdersAsync();
-            }
-            catch (SqlException ex)
-            {
-                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to change status: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to change status: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Populates the form fields based on the selected item.
-        /// This is called automatically when the `SelectedPurchaseOrder` changes.
-        /// </summary>
         private void PopulateForm()
         {
             if (SelectedPurchaseOrder != null)
             {
                 OrderIdText = SelectedPurchaseOrder.OrderId.ToString();
-                SupplierIdText = SelectedPurchaseOrder.SupplierId.ToString();
+                SelectedSupplierId = SelectedPurchaseOrder.SupplierId;
                 OrderDate = SelectedPurchaseOrder.OrderDate;
-                TotalAmountText = SelectedPurchaseOrder.TotalAmount.ToString();
+                TotalAmountText = SelectedPurchaseOrder.TotalAmount.ToString(CultureInfo.InvariantCulture);
                 DescriptionText = SelectedPurchaseOrder.Description;
                 Status = SelectedPurchaseOrder.Status;
             }
@@ -295,176 +396,97 @@ namespace HospitalManagementSystem.Views.UserControls
             {
                 ClearForm();
             }
-            OnPropertyChanged("OrderIdText");
-            OnPropertyChanged("SupplierIdText");
-            OnPropertyChanged("OrderDate");
-            OnPropertyChanged("TotalAmountText");
-            OnPropertyChanged("DescriptionText");
-            OnPropertyChanged("Status");
+
+            OnPropertyChanged(nameof(OrderIdText));
+            OnPropertyChanged(nameof(SelectedSupplierId));
+            OnPropertyChanged(nameof(OrderDate));
+            OnPropertyChanged(nameof(TotalAmountText));
+            OnPropertyChanged(nameof(DescriptionText));
+            OnPropertyChanged(nameof(Status));
         }
 
-        /// <summary>
-        /// Resets all input fields.
-        /// </summary>
         public void ClearForm()
         {
             OrderIdText = string.Empty;
-            SupplierIdText = string.Empty;
+            SelectedSupplierId = null;
             OrderDate = null;
             TotalAmountText = string.Empty;
             DescriptionText = string.Empty;
-            Status = "Draft"; // Set initial status
-            OnPropertyChanged(string.Empty); // Notify all properties changed
+            Status = "Draft";
+            OnPropertyChanged(string.Empty);
         }
 
-        /// <summary>
-        /// Helper method to add parameters to the SQL command.
-        /// </summary>
-        private void AddParameters(SqlCommand command)
+        private bool TryAddParameters(SqlCommand command, out string error)
         {
-            if (int.TryParse(SupplierIdText, out int supplierId))
-            {
-                command.Parameters.AddWithValue("@SupplierId", supplierId);
-            }
-            else
-            {
-                command.Parameters.AddWithValue("@SupplierId", DBNull.Value);
-            }
+            error = null;
 
-            if (OrderDate.HasValue)
+            if (!SelectedSupplierId.HasValue)
             {
-                command.Parameters.AddWithValue("@OrderDate", OrderDate.Value);
+                error = "Please select a Supplier from the dropdown.";
+                return false;
             }
-            else
-            {
-                command.Parameters.AddWithValue("@OrderDate", DBNull.Value);
-            }
+            command.Parameters.Add("@SupplierId", SqlDbType.Int).Value = SelectedSupplierId.Value;
 
-            if (decimal.TryParse(TotalAmountText, out decimal totalAmount))
+            if (!OrderDate.HasValue)
             {
-                command.Parameters.AddWithValue("@TotalAmount", totalAmount);
+                error = "Order Date is required.";
+                return false;
             }
-            else
-            {
-                command.Parameters.AddWithValue("@TotalAmount", 0);
-            }
+            command.Parameters.Add("@OrderDate", SqlDbType.Date).Value = OrderDate.Value.Date;
 
-            command.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(DescriptionText) ? (object)DBNull.Value : DescriptionText);
-            command.Parameters.AddWithValue("@Status", Status);
+            if (!decimal.TryParse(TotalAmountText, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || amount < 0)
+            {
+                error = "Enter a valid positive Total Amount (e.g., 1499.99).";
+                return false;
+            }
+            command.Parameters.Add("@TotalAmount", SqlDbType.Money).Value = amount;
+
+            command.Parameters.Add("@Description", SqlDbType.NVarChar, 500)
+                   .Value = string.IsNullOrWhiteSpace(DescriptionText) ? (object)DBNull.Value : DescriptionText.Trim();
+
+            command.Parameters.Add("@Status", SqlDbType.NVarChar, 30)
+                   .Value = string.IsNullOrWhiteSpace(Status) ? "Draft" : Status;
+
+            return true;
         }
 
-        // Boilerplate code for INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    /// <summary>
-    /// Interaction logic for PurchaseOrdersView.xaml
-    /// This is the "View" in the MVVM pattern.
-    /// It now only interacts with the ViewModel.
-    /// </summary>
     public partial class PurchaseOrdersView : UserControl
     {
-        private PurchaseOrdersViewModel _viewModel;
+        private readonly PurchaseOrdersViewModel _vm;
 
         public PurchaseOrdersView()
         {
             InitializeComponent();
-            _viewModel = new PurchaseOrdersViewModel();
-            this.DataContext = _viewModel; // Set the DataContext to the ViewModel
-            this.Loaded += PurchaseOrdersView_Loaded;
+            _vm = new PurchaseOrdersViewModel();
+            DataContext = _vm;
+            Loaded += PurchaseOrdersView_Loaded;
         }
 
-        /// <summary>
-        /// Loads data when the view is loaded.
-        /// The 'await' keyword is now correctly used here.
-        /// </summary>
         private async void PurchaseOrdersView_Loaded(object sender, RoutedEventArgs e)
         {
-            await _viewModel.LoadPurchaseOrdersAsync();
+            await _vm.InitAsync();
         }
 
-        /// <summary>
-        /// Handles the "Add" button click event.
-        /// </summary>
-        private async void btnAdd_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.AddPurchaseOrderAsync();
-        }
+        private async void btnAdd_Click(object sender, RoutedEventArgs e) => await _vm.AddPurchaseOrderAsync();
+        private async void btnUpdate_Click(object sender, RoutedEventArgs e) => await _vm.UpdatePurchaseOrderAsync();
+        private async void btnDelete_Click(object sender, RoutedEventArgs e) => await _vm.DeletePurchaseOrderAsync();
+        private async void btnSubmitForApproval_Click(object sender, RoutedEventArgs e) => await _vm.SubmitForApprovalAsync();
+        private async void btnApprove_Click(object sender, RoutedEventArgs e) => await _vm.ApproveAsync();
+        private async void btnReject_Click(object sender, RoutedEventArgs e) => await _vm.RejectAsync();
 
-        /// <summary>
-        /// Handles the "Update" button click event.
-        /// </summary>
-        private async void btnUpdate_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.UpdatePurchaseOrderAsync();
-        }
-
-        /// <summary>
-        /// Handles the "Delete" button click event.
-        /// </summary>
-        private async void btnDelete_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.DeletePurchaseOrderAsync();
-        }
-
-        /// <summary>
-        /// Handles the "Submit for Approval" button click event.
-        /// </summary>
-        private async void btnSubmitForApproval_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.SubmitForApprovalAsync();
-        }
-
-        /// <summary>
-        /// Handles the "Approve" button click event.
-        /// </summary>
-        private async void btnApprove_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.ApproveAsync();
-        }
-
-        /// <summary>
-        /// Handles the "Reject" button click event.
-        /// </summary>
-        private async void btnReject_Click(object sender, RoutedEventArgs e)
-        {
-            await _viewModel.RejectAsync();
-        }
-
-        /// <summary>
-        /// Handles the selection change in the DataGrid.
-        /// </summary>
         private void PurchaseOrdersDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _viewModel.SelectedPurchaseOrder = PurchaseOrdersDataGrid.SelectedItem as PurchaseOrder;
-
-            // The rest of the UI state is managed by the ViewModel.
-            btnAdd.IsEnabled = _viewModel.SelectedPurchaseOrder == null;
-            btnUpdate.IsEnabled = _viewModel.SelectedPurchaseOrder != null;
-            btnDelete.IsEnabled = _viewModel.SelectedPurchaseOrder != null;
-
-            if (_viewModel.SelectedPurchaseOrder != null)
-            {
-                btnApprove.IsEnabled = _viewModel.SelectedPurchaseOrder.Status == "Submitted";
-                btnReject.IsEnabled = _viewModel.SelectedPurchaseOrder.Status == "Submitted";
-            }
-            else
-            {
-                btnApprove.IsEnabled = false;
-                btnReject.IsEnabled = false;
-            }
+            _vm.SelectedPurchaseOrder = PurchaseOrdersDataGrid.SelectedItem as PurchaseOrder;
         }
 
-        /// <summary>
-        /// Handles the "Clear" button click and resets the form.
-        /// </summary>
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.ClearForm();
+            _vm.ClearForm();
             PurchaseOrdersDataGrid.UnselectAll();
         }
     }

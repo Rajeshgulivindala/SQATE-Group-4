@@ -6,76 +6,76 @@
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="500">
-	<Grid Background="#FAFAFA" Margin="20">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="*" />
-		</Grid.RowDefinitions>
+    <Grid Background="#FAFAFA" Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-		<!-- Top bar -->
-		<DockPanel LastChildFill="True" Margin="0,0,0,16">
-			<TextBlock Text="My Profile"
-                       FontSize="22" FontWeight="Bold"
-                       Margin="0,0,12,0"
-                       VerticalAlignment="Center"/>
-			<Button x:Name="BtnRefresh"
-                    Content="Refresh"
-                    Padding="12,4"
-                    DockPanel.Dock="Right"
-                    Click="BtnRefresh_Click"/>
-			<TextBlock x:Name="TxtInfo"
-                       Margin="12,0,0,0"
-                       VerticalAlignment="Center"
-                       Foreground="#6B7280"/>
-		</DockPanel>
+        <!-- Top bar -->
+        <DockPanel LastChildFill="True" Margin="0,0,0,16">
+            <TextBlock Text="My Profile"
+                 FontSize="22" FontWeight="Bold"
+                 Margin="0,0,12,0"
+                 VerticalAlignment="Center"/>
+            <Button x:Name="BtnRefresh"
+              Content="Refresh"
+              Padding="12,4"
+              DockPanel.Dock="Right"
+              Click="BtnRefresh_Click"/>
+            <TextBlock x:Name="TxtInfo"
+                 Margin="12,0,0,0"
+                 VerticalAlignment="Center"
+                 Foreground="#6B7280"/>
+        </DockPanel>
 
-		<!-- Card -->
-		<Border Grid.Row="1" Background="White" CornerRadius="10" Padding="18" BorderBrush="#DDD" BorderThickness="1">
-			<Grid>
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="2*"/>
-					<ColumnDefinition Width="3*"/>
-				</Grid.ColumnDefinitions>
-				<Grid.RowDefinitions>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-				</Grid.RowDefinitions>
+        <!-- Card -->
+        <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="18" BorderBrush="#DDD" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-				<!-- Labels -->
-				<TextBlock Text="Patient Code:" Grid.Row="0" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="First Name:"  Grid.Row="1" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Last Name:"   Grid.Row="2" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="DOB:"         Grid.Row="3" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Gender:"      Grid.Row="4" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Phone:"       Grid.Row="5" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Email:"       Grid.Row="6" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Address:"     Grid.Row="7" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Insurance:"   Grid.Row="8" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Blood Type:"  Grid.Row="9" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
-				<TextBlock Text="Allergies:"   Grid.Row="10" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,0"/>
+                <!-- Labels -->
+                <TextBlock Text="Patient Code:" Grid.Row="0" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="First Name:"  Grid.Row="1" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Last Name:"   Grid.Row="2" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="DOB:"         Grid.Row="3" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Gender:"      Grid.Row="4" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Phone:"       Grid.Row="5" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Email:"       Grid.Row="6" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Address:"     Grid.Row="7" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Insurance:"   Grid.Row="8" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Blood Type:"  Grid.Row="9" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,6"/>
+                <TextBlock Text="Allergies:"   Grid.Row="10" Grid.Column="0" FontWeight="Bold" Margin="0,0,8,0"/>
 
-				<!-- Values -->
-				<TextBlock x:Name="TxtCode"       Grid.Row="0"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtFirstName"  Grid.Row="1"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtLastName"   Grid.Row="2"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtDOB"        Grid.Row="3"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtGender"     Grid.Row="4"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtPhone"      Grid.Row="5"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtEmail"      Grid.Row="6"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtAddress"    Grid.Row="7"  Grid.Column="1" Margin="0,0,0,6" TextWrapping="Wrap"/>
-				<TextBlock x:Name="TxtInsurance"  Grid.Row="8"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtBloodType"  Grid.Row="9"  Grid.Column="1" Margin="0,0,0,6"/>
-				<TextBlock x:Name="TxtAllergies"  Grid.Row="10" Grid.Column="1" Margin="0,0,0,0" TextWrapping="Wrap"/>
-			</Grid>
-		</Border>
-	</Grid>
+                <!-- Values -->
+                <TextBlock x:Name="TxtCode"       Grid.Row="0"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtFirstName"  Grid.Row="1"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtLastName"   Grid.Row="2"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtDOB"        Grid.Row="3"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtGender"     Grid.Row="4"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtPhone"      Grid.Row="5"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtEmail"      Grid.Row="6"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtAddress"    Grid.Row="7"  Grid.Column="1" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                <TextBlock x:Name="TxtInsurance"  Grid.Row="8"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtBloodType"  Grid.Row="9"  Grid.Column="1" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtAllergies"  Grid.Row="10" Grid.Column="1" Margin="0,0,0,0" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+    </Grid>
 </UserControl>

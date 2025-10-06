@@ -1,9 +1,9 @@
 <UserControl x:Class="HospitalManagementSystem.Views.UserControls.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="#F8F9FA">
         <Grid.RowDefinitions>
@@ -14,14 +14,16 @@
         <!-- Header -->
         <Border Grid.Row="0" Background="#E9ECEF" Padding="20">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Image x:Name="HospitalLogoImage" Width="80" Height="80"
-                       Margin="0,0,20,0" VerticalAlignment="Top"
+                <Image x:Name="HospitalLogoImage"
+                       Width="80" Height="80"
+                       Margin="0,0,20,0"
+                       VerticalAlignment="Top"
                        Stretch="UniformToFill"/>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Name="TxtHospitalName" FontSize="28"
-                               FontWeight="Bold" Foreground="#2C3E50"/>
-                    <TextBlock x:Name="TxtHospitalAddress" FontSize="14"
-                               Foreground="#7F8C8D"/>
+                    <TextBlock x:Name="TxtHospitalName"
+                               FontSize="28" FontWeight="Bold" Foreground="#2C3E50"/>
+                    <TextBlock x:Name="TxtHospitalAddress"
+                               FontSize="14" Foreground="#7F8C8D"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -29,17 +31,17 @@
         <!-- Body -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel HorizontalAlignment="Center" Margin="20" Width="900">
-                <TextBlock Text="Welcome to the Hospital Dashboard" 
+                <TextBlock Text="Welcome to the Hospital Dashboard"
                            FontSize="36" FontWeight="Bold"
                            Foreground="#2C3E50" HorizontalAlignment="Center"
                            Margin="0,12,0,4"/>
-                <TextBlock x:Name="TxtSubtitleName" FontSize="18"
-                           Foreground="#7F8C8D" HorizontalAlignment="Center"
-                           Margin="0,0,0,20"/>
+                <TextBlock x:Name="TxtSubtitleName"
+                           FontSize="18" Foreground="#7F8C8D"
+                           HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
                 <!-- Details Card -->
                 <Border Background="White" Padding="16" CornerRadius="8"
-                        BorderBrush="#E0E0E0" BorderThickness="1" >
+                        BorderBrush="#E0E0E0" BorderThickness="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="220"/>

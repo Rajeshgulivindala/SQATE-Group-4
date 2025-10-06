@@ -18,35 +18,43 @@ namespace HospitalManagementSystem.Views.UserControls
             _ = InitializeHeaderAsync();
 
             HospitalSettingsService.Instance.SettingsChanged += OnSettingsChanged;
-            this.Unloaded += DashboardView_Unloaded;
+            Unloaded += DashboardView_Unloaded;
         }
 
         private async System.Threading.Tasks.Task InitializeHeaderAsync()
         {
             var svc = HospitalSettingsService.Instance;
 
-            if (svc.Current == null)
+            if (svc?.Current == null)
             {
                 try { await svc.LoadAsync(); } catch { /* ignore */ }
             }
 
-            ApplySettingsToUI(svc.Current);
+            ApplySettingsToUI(svc?.Current);
         }
 
         private void OnSettingsChanged(object sender, HospitalSettingsModel e)
         {
-            ApplySettingsToUI(e);
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => ApplySettingsToUI(e));
+            }
+            else
+            {
+                ApplySettingsToUI(e);
+            }
         }
 
         private void ApplySettingsToUI(HospitalSettingsModel s)
         {
-            // Header text and defaults
+            const string dash = "-";
+
             if (s == null)
             {
                 TxtHospitalName.Text = "Hospital Management System";
-                TxtHospitalAddress.Text = "";
-                TxtSubtitleName.Text = "-";
-                TxtPhone.Text = TxtLicense.Text = TxtCurrency.Text = TxtTimezone.Text = "-";
+                TxtHospitalAddress.Text = dash;
+                TxtSubtitleName.Text = dash;
+                TxtPhone.Text = TxtLicense.Text = TxtCurrency.Text = TxtTimezone.Text = dash;
                 SetHyperlink(LinkEmail, null);
                 SetHyperlink(LinkWebsite, null);
                 HospitalLogoImage.Source = null;
@@ -54,61 +62,57 @@ namespace HospitalManagementSystem.Views.UserControls
             }
 
             TxtHospitalName.Text = string.IsNullOrWhiteSpace(s.HospitalName) ? "Hospital Management System" : s.HospitalName;
-            TxtHospitalAddress.Text = s.Address ?? "";
-            TxtSubtitleName.Text = string.IsNullOrWhiteSpace(s.HospitalName) ? "-" : s.HospitalName;
+            TxtHospitalAddress.Text = string.IsNullOrWhiteSpace(s.Address) ? dash : s.Address;
+            TxtSubtitleName.Text = string.IsNullOrWhiteSpace(s.HospitalName) ? dash : s.HospitalName;
 
-            // Details
-            TxtPhone.Text = string.IsNullOrWhiteSpace(s.ContactPhone) ? "-" : s.ContactPhone;
-            TxtLicense.Text = string.IsNullOrWhiteSpace(s.LicenseNumber) ? "-" : s.LicenseNumber;
-            TxtCurrency.Text = string.IsNullOrWhiteSpace(s.DefaultCurrency) ? "-" : s.DefaultCurrency;
-            TxtTimezone.Text = string.IsNullOrWhiteSpace(s.TimeZone) ? "-" : s.TimeZone;
+            TxtPhone.Text = string.IsNullOrWhiteSpace(s.ContactPhone) ? dash : s.ContactPhone;
+            TxtLicense.Text = string.IsNullOrWhiteSpace(s.LicenseNumber) ? dash : s.LicenseNumber;
+            TxtCurrency.Text = string.IsNullOrWhiteSpace(s.DefaultCurrency) ? dash : s.DefaultCurrency;
+            TxtTimezone.Text = string.IsNullOrWhiteSpace(s.TimeZone) ? dash : s.TimeZone;
 
-            // Email
-            var email = s.HospitalEmail == null ? null : s.HospitalEmail.Trim();
-            if (!string.IsNullOrWhiteSpace(email))
-                SetHyperlink(LinkEmail, "mailto:" + email, email);
-            else
-                SetHyperlink(LinkEmail, null);
+            var email = s.HospitalEmail?.Trim();
+            SetHyperlink(LinkEmail, string.IsNullOrWhiteSpace(email) ? null : "mailto:" + email, email);
 
-            // Website (prepend https:// if missing)
-            var web = s.Website == null ? null : s.Website.Trim();
-            if (!string.IsNullOrWhiteSpace(web))
+            var web = s.Website?.Trim();
+            if (!string.IsNullOrWhiteSpace(web) &&
+                !web.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !web.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                if (!web.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                    !web.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                {
-                    web = "https://" + web;
-                }
-                SetHyperlink(LinkWebsite, web, web);
+                web = "https://" + web;
             }
-            else
-            {
-                SetHyperlink(LinkWebsite, null);
-            }
+            SetHyperlink(LinkWebsite, string.IsNullOrWhiteSpace(web) ? null : web, web);
 
-            // Logo: pack URI, absolute, or relative
             try
             {
                 HospitalLogoImage.Source = null;
-                var raw = s.LogoPath == null ? null : s.LogoPath.Trim().Trim('"');
+                var raw = s.LogoPath?.Trim().Trim('"');
                 if (string.IsNullOrWhiteSpace(raw)) return;
 
+                Uri uri = null;
                 if (raw.StartsWith("pack://", StringComparison.OrdinalIgnoreCase))
                 {
-                    SetImage(new Uri(raw, UriKind.Absolute));
-                    return;
+                    uri = new Uri(raw, UriKind.Absolute);
+                }
+                else if (Path.IsPathRooted(raw) && File.Exists(raw))
+                {
+                    uri = new Uri(raw, UriKind.Absolute);
+                }
+                else
+                {
+                    var combined = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, raw));
+                    if (File.Exists(combined))
+                        uri = new Uri(combined, UriKind.Absolute);
                 }
 
-                if (Path.IsPathRooted(raw) && File.Exists(raw))
+                if (uri != null)
                 {
-                    SetImage(new Uri(raw, UriKind.Absolute));
-                    return;
-                }
-
-                var combined = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, raw));
-                if (File.Exists(combined))
-                {
-                    SetImage(new Uri(combined, UriKind.Absolute));
+                    var bmp = new BitmapImage();
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.UriSource = uri;
+                    bmp.EndInit();
+                    bmp.Freeze();
+                    HospitalLogoImage.Source = bmp;
                 }
             }
             catch
@@ -117,21 +121,12 @@ namespace HospitalManagementSystem.Views.UserControls
             }
         }
 
-        private void SetImage(Uri uri)
-        {
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.UriSource = uri;
-            bmp.EndInit();
-            bmp.Freeze();
-            HospitalLogoImage.Source = bmp;
-        }
-
-        // Single helper (C# 7.3 compatible). Remove any other overloads.
         private static void SetHyperlink(Hyperlink link, string uri, string display = null)
         {
+            if (link == null) return;
+
             link.Inlines.Clear();
+
             if (string.IsNullOrWhiteSpace(uri))
             {
                 link.Inlines.Add(new Run("-"));
@@ -163,6 +158,7 @@ namespace HospitalManagementSystem.Views.UserControls
         private void DashboardView_Unloaded(object sender, System.Windows.RoutedEventArgs e)
         {
             HospitalSettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+            Unloaded -= DashboardView_Unloaded;
         }
     }
 }
