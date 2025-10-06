@@ -1,167 +1,205 @@
 ﻿using System.Windows;
 using HospitalManagementSystem.Services.Authentication;
 using HospitalManagementSystem.Views.UserControls;
+// This using statement is now assumed to contain all UserControl views (Dashboard, Patient, Appointment, Admin, etc.)
 
 namespace HospitalManagementSystem.Views.Windows
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
             InitializeUserInterface();
-            ShowDefaultForRole();
         }
 
         /// <summary>
-        /// Hide/show sections based on role.
+        /// Restricts UI elements based on the current user's role.
+        /// If the user is a Doctor or Nurse, administrative Expander controls are hidden.
         /// </summary>
         private void InitializeUserInterface()
         {
-            string role = AuthenticationService.CurrentUser?.Role ?? "";
+            string userRole = AuthenticationService.CurrentUser?.Role;
 
-            // Default: show admin sections
-            UserExpander.Visibility = Visibility.Visible;
-            SystemExpander.Visibility = Visibility.Visible;
-            ReportsExpander.Visibility = Visibility.Visible;
-            DoctorExpander.Visibility = Visibility.Collapsed;
-            NurseExpander.Visibility = Visibility.Collapsed;
-            ClerkExpander.Visibility = Visibility.Collapsed;
-            PatientExpander.Visibility = Visibility.Collapsed;
-
-            switch (role)
+            // Administrative features that only the Admin should see
+            if (userRole == "Doctor" || userRole == "Nurse" || userRole == "Clerk")
             {
-                case "Admin":
-                    // admin sees admin sections only (already set)
-                    break;
+                // Hide User Management
+                UserExpander.Visibility = Visibility.Collapsed;
 
-                case "Doctor":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
+                // Hide System Configuration
+                SystemExpander.Visibility = Visibility.Collapsed;
+
+                // Optionally hide other non-clinical/non-relevant sections
+                // Example: Hide Inventory Management for a Doctor
+                if (userRole == "Doctor")
+                {
                     DoctorExpander.Visibility = Visibility.Visible;
-                    break;
-
-                case "Nurse":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
+                    NurseExpander.Visibility = Visibility.Collapsed;
+                    InventoryExpander.Visibility = Visibility.Collapsed;
                     ReportsExpander.Visibility = Visibility.Collapsed;
-                    NurseExpander.Visibility = Visibility.Visible;
-                    break;
+                    ClerkExpander.Visibility = Visibility.Collapsed;
+                }
 
-                case "Clerk":
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
+
+                // Specific UI visibility for Doctor
+
+                if (userRole == "Nurse")
+                {
                     ReportsExpander.Visibility = Visibility.Collapsed;
+                    DoctorExpander.Visibility = Visibility.Collapsed;
+                    ClerkExpander.Visibility = Visibility.Collapsed;
+                }
+                if (userRole == "Clerk")
+                {
                     ClerkExpander.Visibility = Visibility.Visible;
-                    break;
-
-                case "Patient":
-                    // Only the patient menu is visible for patients
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
-                    DoctorExpander.Visibility = Visibility.Collapsed;
+                    InventoryExpander.Visibility = Visibility.Collapsed;
                     NurseExpander.Visibility = Visibility.Collapsed;
-                    ClerkExpander.Visibility = Visibility.Collapsed;
-                    PatientExpander.Visibility = Visibility.Visible;
-                    break;
-
-                default:
-                    // unknown role -> minimalist view
-                    UserExpander.Visibility = Visibility.Collapsed;
-                    SystemExpander.Visibility = Visibility.Collapsed;
-                    ReportsExpander.Visibility = Visibility.Collapsed;
                     DoctorExpander.Visibility = Visibility.Collapsed;
-                    NurseExpander.Visibility = Visibility.Collapsed;
-                    ClerkExpander.Visibility = Visibility.Collapsed;
-                    PatientExpander.Visibility = Visibility.Collapsed;
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Load a sensible default view for each role.
-        /// Patients go straight to "My Profile".
-        /// </summary>
-        private void ShowDefaultForRole()
-        {
-            string role = AuthenticationService.CurrentUser?.Role ?? "";
-
-            if (role == "Patient")
-            {
-                MainContentArea.Content = new PatientSelfView();
+                    ReportsExpander.Visibility = Visibility.Collapsed;
+                }
             }
             else
             {
-                // Keep your original dashboard as the default elsewhere
-                MainContentArea.Content = new DashboardView();
+                // If the user is Admin or Nurse, hide the Doctor-specific dashboard
+
+                if (userRole == "Admin")
+                    NurseExpander.Visibility = Visibility.Collapsed;
+                DoctorExpander.Visibility = Visibility.Collapsed;
+                ClerkExpander.Visibility = Visibility.Collapsed;
+
             }
+
+
         }
 
-
         /// <summary>
-        /// Handles all sidebar navigation.
+        /// Handles the click events for all navigation buttons to load corresponding views 
+        /// into the MainContentArea based on the button's Tag property.
         /// </summary>
         private void NavigationButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button btn)
+            if (sender is System.Windows.Controls.Button button)
             {
-                string tag = (btn.Tag ?? "").ToString().ToLowerInvariant();
+                // Safely retrieve the Tag and convert to lowercase for case-insensitive comparison
+                string tag = button.Tag?.ToString().ToLowerInvariant();
 
+                // Use a switch statement for clean handling of multiple view navigations
                 switch (tag)
                 {
+                    // ------------------------------------
+                    // --- Clinical / Doctor / Nurse Views ---
+                    // ------------------------------------
+
+                    case "patientmanagement":
+                        MainContentArea.Content = new PatientManagementView();
+                        break;
+                    case "appointmentmanagement":
+                        MainContentArea.Content = new AppointmentManagementView();
+                        break;
+                    case "medicalrecords":
+                        MainContentArea.Content = new MedicalRecordsView();
+                        break;
+
+                    case "shiftmanagement":
+                        MainContentArea.Content = new ShiftManagementView();
+                        break;
                     case "dashboard":
                         MainContentArea.Content = new DashboardView();
                         break;
-
-                    // Admin & Staff (kept from your previous routes)
-                    case "registeruser": MainContentArea.Content = new RegisterUserView(); break;
-                    case "modifyroles": MainContentArea.Content = new ModifyRolesView(); break;
-                    case "deactivateusers": MainContentArea.Content = new DeactivateUsersView(); break;
-                    case "passwordreset": MainContentArea.Content = new PasswordResetView(); break;
-                    case "staffmanagement": MainContentArea.Content = new StaffManagementView(); break;
-
-                    case "departmentmanagement": MainContentArea.Content = new DepartmentManagementView(); break;
-                    case "roommanagement": MainContentArea.Content = new RoomManagementView(); break;
-                    case "hospitalsettings": MainContentArea.Content = new HospitalSettingsView(); break;
-                    case "backupmaintenance": MainContentArea.Content = new BackupMaintenanceView(); break;
-                    case "communication": MainContentArea.Content = new CommunicationManagementView(); break;
-
-                    case "financialanalytics": MainContentArea.Content = new FinancialAnalyticsView(); break;
-                    case "staffperformance": MainContentArea.Content = new StaffPerformanceView(); break;
-                    case "auditlogs": MainContentArea.Content = new AuditLogsView(); break;
-                    case "systemusage": MainContentArea.Content = new SystemUsageView(); break;
-
-                    case "patientmanagement": MainContentArea.Content = new PatientManagementView(); break;
-                    case "appointmentmanagement": MainContentArea.Content = new AppointmentManagementView(); break;
-                    case "medicalrecords": MainContentArea.Content = new MedicalRecordsView(); break;
-                    case "shiftmanagement": MainContentArea.Content = new ShiftManagementView(); break;
-                    case "suppliermanagement": MainContentArea.Content = new SupplierManagementView(); break;
-                    case "stockmonitoring": MainContentArea.Content = new StockMonitoringView(); break;
-                    case "purchaseorders": MainContentArea.Content = new PurchaseOrdersView(); break;
-                    case "purchaseapprovals": MainContentArea.Content = new PurchaseApprovalsView(); break;
-                    case "billing": MainContentArea.Content = new BillingManagementView(); break;
-
-                    // Patient only
-                    case "patientprofile":
-                        MainContentArea.Content = new PatientSelfView();
+                    // ------------------------------------
+                    // --- Admin: User Management Views ---
+                    // ------------------------------------
+                    case "registeruser":
+                        MainContentArea.Content = new RegisterUserView();
                         break;
-                    
+                    case "modifyroles":
+                        MainContentArea.Content = new ModifyRolesView();
+                        break;
+                    case "deactivateusers":
+                        MainContentArea.Content = new DeactivateUsersView();
+                        break;
+                    case "passwordreset":
+                        MainContentArea.Content = new PasswordResetView();
+                        break;
 
+
+                    // ------------------------------------
+                    // --- Admin: System Configuration Views ---
+                    // ------------------------------------
+                    case "departmentmanagement":
+                        MainContentArea.Content = new DepartmentManagementView();
+                        break;
+                    case "roommanagement":
+                        MainContentArea.Content = new RoomManagementView();
+                        break;
+                    case "hospitalsettings":
+                        MainContentArea.Content = new HospitalSettingsView();
+                        break;
+                    case "backupmaintenance":
+                        MainContentArea.Content = new BackupMaintenanceView();
+                        break;
+
+
+                    // ------------------------------------
+                    // --- Reporting & Analytics Views ---
+                    // ------------------------------------
+
+                    case "financialanalytics":
+                        MainContentArea.Content = new FinancialAnalyticsView();
+                        break;
+                    case "staffperformance":
+                        MainContentArea.Content = new StaffPerformanceView();
+                        break;
+                    case "auditlogs":
+                        MainContentArea.Content = new AuditLogsView();
+                        break;
+
+
+                    // ------------------------------------
+                    // --- Inventory Management Views ---
+                    // ------------------------------------
+                    case "suppliermanagement":
+                        MainContentArea.Content = new SupplierManagementView();
+                        break;
+                    case "stockmonitoring":
+                        MainContentArea.Content = new StockMonitoringView();
+                        break;
+                    case "purchaseorders":
+                        MainContentArea.Content = new PurchaseOrdersView();
+                        break;
+                    case "purchaseapprovals":
+                        // Grouping purchase order/approval into one view for simplicity
+                        MainContentArea.Content = new PurchaseApprovalsView();
+                        break;
+                    case "billing":
+                        MainContentArea.Content = new BillingManagementView();
+                        break;
                     default:
-                        // no-op
+                        // Log or handle unhandled navigation tags
+                        System.Diagnostics.Debug.WriteLine($"Unhandled navigation tag: {tag}");
                         break;
                 }
             }
         }
-
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
+            // Clear current user session if needed
             AuthenticationService.CurrentUser = null;
-            var login = new LoginWindow();
-            login.Show();
-            Close();
+
+            // Show the Login window again
+            var loginWindow = new LoginWindow();
+            loginWindow.Show();
+
+            // Close the current MainWindow
+            this.Close();
         }
+
+
+        // You would typically include a Logout button handler here as well
+        // private void LogoutButton_Click(object sender, RoutedEventArgs e) { ... }
     }
 }

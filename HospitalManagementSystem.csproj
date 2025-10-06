@@ -33,8 +33,6 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <!-- NEW: force C# 7.3 so nullable-reference syntax isn't required -->
-    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -155,9 +153,7 @@
     <Compile Include="Services\Authentication\SessionManager.cs" />
     <Compile Include="Services\Authentication\TokenService.cs" />
     <Compile Include="Services\Data\HMSDbContext.cs" />
-    <Compile Include="Services\Data\StaffRepository.cs" />
     <Compile Include="Services\Data\UserService.cs" />
-    <Compile Include="Services\HospitalSettingsService.cs" />
     <Compile Include="Services\Navigation\INavigationService.cs" />
     <Compile Include="Services\Navigation\NavigationService.cs" />
     <Compile Include="Utilities\UserCreator.cs" />
@@ -173,9 +169,6 @@
     </Compile>
     <Compile Include="Views\UserControls\BillingManagementView.xaml.cs">
       <DependentUpon>BillingManagementView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\UserControls\CommunicationManagementView.xaml.cs">
-      <DependentUpon>CommunicationManagementView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\UserControls\Converters.cs" />
     <Compile Include="Views\UserControls\DashboardView.xaml.cs">
@@ -206,9 +199,6 @@
     <Compile Include="Views\UserControls\PatientManagementView.xaml.cs">
       <DependentUpon>PatientManagementView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\UserControls\PatientSelfView.xaml.cs">
-      <DependentUpon>PatientSelfView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\UserControls\PurchaseApprovalsView.xaml.cs">
       <DependentUpon>PurchaseApprovalsView.xaml</DependentUpon>
     </Compile>
@@ -225,9 +215,6 @@
     </Compile>
     <Compile Include="Views\UserControls\ShiftManagementView.xaml.cs">
       <DependentUpon>ShiftManagementView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\UserControls\StaffManagementView.xaml.cs">
-      <DependentUpon>StaffManagementView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\UserControls\StaffPerformanceView.xaml.cs">
       <DependentUpon>StaffPerformanceView.xaml</DependentUpon>
@@ -247,19 +234,10 @@
     <Page Include="Views\UserControls\BillingManagementView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\UserControls\CommunicationManagementView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\UserControls\PatientSelfView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Views\UserControls\PurchaseOrderView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\UserControls\ShiftManagementView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\UserControls\StaffManagementView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Windows\MainWindow.xaml">
@@ -392,12 +370,6 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
-  <!-- NEW: auto-include & copy all images under Resources\Images -->
-  <ItemGroup>
-    <Content Include="Resources\Images\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.8">

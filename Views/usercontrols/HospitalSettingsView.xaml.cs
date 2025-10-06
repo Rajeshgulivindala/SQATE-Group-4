@@ -1,136 +1,174 @@
 ﻿using System;
+using System.Data;
 using System.Data.SqlClient;
-using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using HospitalManagementSystem.Services;
-using Microsoft.Win32;
 
 namespace HospitalManagementSystem.Views.UserControls
 {
+    /// <summary>
+    /// Interaction logic for HospitalSettingsView.xaml
+    /// </summary>
     public partial class HospitalSettingsView : UserControl
     {
-        private readonly string connectionString =
-            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
+        private readonly string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True";
+
+        /// <summary>
+        /// A data model for hospital settings.
+        /// </summary>
+        public class HospitalSettings
+        {
+            public int SettingID { get; set; }
+            public string HospitalName { get; set; }
+            public string Address { get; set; }
+            public string ContactPhone { get; set; }
+            public string HospitalEmail { get; set; }
+            public string Website { get; set; }
+            public string LicenseNumber { get; set; }
+            public string DefaultCurrency { get; set; }
+            public string TimeZone { get; set; }
+            public string LogoPath { get; set; }
+        }
 
         public HospitalSettingsView()
         {
             InitializeComponent();
-            HospitalSettingsService.Instance.SetConnectionString(connectionString);
-            _ = LoadSettingsIntoUI();
+
+            // Load settings when the view is initialized.
+            LoadSettingsFromDatabase();
         }
 
-        private async Task LoadSettingsIntoUI()
+        /// <summary>
+        /// Loads hospital settings from the database and populates the UI.
+        /// </summary>
+        private async void LoadSettingsFromDatabase()
         {
             try
             {
-                var settings = await HospitalSettingsService.Instance.LoadAsync();
-                if (settings != null)
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    txtHospitalName.Text = settings.HospitalName;
-                    txtAddress.Text = settings.Address;
-                    txtContactPhone.Text = settings.ContactPhone;
-                    txtHospitalEmail.Text = settings.HospitalEmail;
-                    txtWebsite.Text = settings.Website;
-                    txtLicenseNumber.Text = settings.LicenseNumber;
-                    txtDefaultCurrency.Text = settings.DefaultCurrency;
-                    txtTimeZone.Text = settings.TimeZone;
-                    txtLogoPath.Text = settings.LogoPath;
-                }
-                else
-                {
-                    txtDefaultCurrency.Text = "CAD";
-                    txtTimeZone.Text = "America/Toronto";
+                    await connection.OpenAsync();
+                    // We assume there is only one row for hospital settings.
+                    string sqlQuery = "SELECT TOP 1 * FROM HospitalSettings";
+                    using (SqlCommand command = new SqlCommand(sqlQuery, connection))
+                    {
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                // Populate the UI controls with data from the database.
+                                txtHospitalName.Text = reader["HospitalName"].ToString();
+                                txtAddress.Text = reader["Address"].ToString();
+                                txtContactPhone.Text = reader["ContactPhone"].ToString();
+                                txtHospitalEmail.Text = reader["HospitalEmail"].ToString();
+                                txtWebsite.Text = reader["Website"].ToString();
+                                txtLicenseNumber.Text = reader["LicenseNumber"].ToString();
+                                txtDefaultCurrency.Text = reader["DefaultCurrency"].ToString();
+                                txtTimeZone.Text = reader["TimeZone"].ToString();
+                                txtLogoPath.Text = reader["LogoPath"].ToString();
+                            }
+                        }
+                    }
                 }
             }
             catch (SqlException ex)
             {
-                MessageBox.Show("A database error occurred: " + ex.Message, "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"A database error occurred: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to load hospital settings: " + ex.Message, "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to load hospital settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        /// <summary>
+        /// Handles the click event for the "Save Settings" button.
+        /// </summary>
         private async void btnSaveSettings_Click(object sender, RoutedEventArgs e)
         {
-            var settings = new HospitalSettingsModel
+            var settings = new HospitalSettings
             {
-                HospitalName = txtHospitalName.Text == null ? null : txtHospitalName.Text.Trim(),
-                Address = txtAddress.Text == null ? null : txtAddress.Text.Trim(),
-                ContactPhone = txtContactPhone.Text == null ? null : txtContactPhone.Text.Trim(),
-                HospitalEmail = txtHospitalEmail.Text == null ? null : txtHospitalEmail.Text.Trim(),
-                Website = txtWebsite.Text == null ? null : txtWebsite.Text.Trim(),
-                LicenseNumber = txtLicenseNumber.Text == null ? null : txtLicenseNumber.Text.Trim(),
-                DefaultCurrency = txtDefaultCurrency.Text == null ? null : txtDefaultCurrency.Text.Trim(),
-                TimeZone = txtTimeZone.Text == null ? null : txtTimeZone.Text.Trim(),
-                LogoPath = txtLogoPath.Text == null ? null : txtLogoPath.Text.Trim()
+                HospitalName = txtHospitalName.Text,
+                Address = txtAddress.Text,
+                ContactPhone = txtContactPhone.Text,
+                HospitalEmail = txtHospitalEmail.Text,
+                Website = txtWebsite.Text,
+                LicenseNumber = txtLicenseNumber.Text,
+                DefaultCurrency = txtDefaultCurrency.Text,
+                TimeZone = txtTimeZone.Text,
+                LogoPath = txtLogoPath.Text
             };
 
             try
             {
-                await HospitalSettingsService.Instance.SaveAsync(settings);
-                MessageBox.Show("Hospital settings saved successfully.", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await SaveSettingsToDatabase(settings);
+                MessageBox.Show("Hospital settings saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred while saving settings: " + ex.Message, "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"An error occurred while saving settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void BtnBrowseLogo_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Saves or updates the hospital settings in the database.
+        /// </summary>
+        private async Task SaveSettingsToDatabase(HospitalSettings settings)
         {
-            var dlg = new OpenFileDialog
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                Title = "Select Logo Image",
-                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.ico;*.gif|All Files|*.*",
-                CheckFileExists = true,
-                Multiselect = false
-            };
+                await connection.OpenAsync();
 
-            if (dlg.ShowDialog() == true)
-            {
-                var sourcePath = dlg.FileName.Trim().Trim('"');
-                try
+                // Step 1: Check if a record exists.
+                string checkQuery = "SELECT COUNT(*) FROM HospitalSettings";
+                using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
                 {
-                    // Copy into app folder: <app>\Resources\Images\*
-                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                    var relDir = Path.Combine("Resources", "Images");
-                    var absDir = Path.Combine(baseDir, relDir);
+                    int recordCount = (int)await checkCommand.ExecuteScalarAsync();
 
-                    if (!Directory.Exists(absDir))
-                        Directory.CreateDirectory(absDir);
-
-                    var fileName = Path.GetFileName(sourcePath);
-                    var destAbs = Path.Combine(absDir, fileName);
-                    var nameNoExt = Path.GetFileNameWithoutExtension(fileName);
-                    var ext = Path.GetExtension(fileName);
-
-                    int i = 1;
-                    while (File.Exists(destAbs))
+                    if (recordCount > 0)
                     {
-                        destAbs = Path.Combine(absDir, nameNoExt + "_" + i + ext);
-                        i++;
+                        // Step 2: If a record exists, update it.
+                        string updateSql = @"
+                            UPDATE HospitalSettings
+                            SET HospitalName = @HospitalName, Address = @Address, ContactPhone = @ContactPhone, 
+                                HospitalEmail = @HospitalEmail, Website = @Website, LicenseNumber = @LicenseNumber, 
+                                DefaultCurrency = @DefaultCurrency, TimeZone = @TimeZone, LogoPath = @LogoPath
+                            WHERE SettingId = 1;"; // Assumes the single record has Id = 1
+                        using (SqlCommand updateCommand = new SqlCommand(updateSql, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@HospitalName", settings.HospitalName);
+                            updateCommand.Parameters.AddWithValue("@Address", settings.Address);
+                            updateCommand.Parameters.AddWithValue("@ContactPhone", settings.ContactPhone);
+                            updateCommand.Parameters.AddWithValue("@HospitalEmail", settings.HospitalEmail);
+                            updateCommand.Parameters.AddWithValue("@Website", settings.Website);
+                            updateCommand.Parameters.AddWithValue("@LicenseNumber", settings.LicenseNumber);
+                            updateCommand.Parameters.AddWithValue("@DefaultCurrency", settings.DefaultCurrency);
+                            updateCommand.Parameters.AddWithValue("@TimeZone", settings.TimeZone);
+                            updateCommand.Parameters.AddWithValue("@LogoPath", settings.LogoPath);
+                            await updateCommand.ExecuteNonQueryAsync();
+                        }
                     }
-
-                    File.Copy(sourcePath, destAbs, false);
-
-                    // Save relative path (Resources\Images\xyz.png)
-                    var relPath = Path.Combine(relDir, Path.GetFileName(destAbs));
-                    txtLogoPath.Text = relPath;
-                    MessageBox.Show("Logo copied into app resources. It will load reliably.",
-                        "Logo Added", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Could not copy logo:\n" + ex.Message,
-                        "Copy Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    else
+                    {
+                        // Step 2: If no record exists, insert a new one.
+                        string insertSql = @"
+                            INSERT INTO HospitalSettings (HospitalName, Address, ContactPhone, HospitalEmail, Website, LicenseNumber, DefaultCurrency, TimeZone, LogoPath)
+                            VALUES (@HospitalName, @Address, @ContactPhone, @HospitalEmail, @Website, @LicenseNumber, @DefaultCurrency, @TimeZone, @LogoPath);";
+                        using (SqlCommand insertCommand = new SqlCommand(insertSql, connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@HospitalName", settings.HospitalName);
+                            insertCommand.Parameters.AddWithValue("@Address", settings.Address);
+                            insertCommand.Parameters.AddWithValue("@ContactPhone", settings.ContactPhone);
+                            insertCommand.Parameters.AddWithValue("@HospitalEmail", settings.HospitalEmail);
+                            insertCommand.Parameters.AddWithValue("@Website", settings.Website);
+                            insertCommand.Parameters.AddWithValue("@LicenseNumber", settings.LicenseNumber);
+                            insertCommand.Parameters.AddWithValue("@DefaultCurrency", settings.DefaultCurrency);
+                            insertCommand.Parameters.AddWithValue("@TimeZone", settings.TimeZone);
+                            insertCommand.Parameters.AddWithValue("@LogoPath", settings.LogoPath);
+                            await insertCommand.ExecuteNonQueryAsync();
+                        }
+                    }
                 }
             }
         }

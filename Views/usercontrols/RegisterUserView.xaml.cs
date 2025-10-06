@@ -1,151 +1,101 @@
 ﻿using System;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-// If you already reference BCrypt.Net-Next via NuGet, uncomment:
-// using BCrypt.Net;
+using HospitalManagementSystem.Models;
+using HospitalManagementSystem.Services.Data;
 
 namespace HospitalManagementSystem.Views.UserControls
 {
+    /// <summary>
+    /// Interaction logic for RegisterUserView.xaml
+    /// </summary>
     public partial class RegisterUserView : UserControl
     {
-        private const string ConnStr =
-            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HMSDatabase;Integrated Security=True;";
+        private readonly UserService _userService;
 
         public RegisterUserView()
         {
             InitializeComponent();
+
+            // NOTE: In production use Dependency Injection for HMSDbContext/UserService.
+            var dbContext = new HMSDbContext();
+            _userService = new UserService(dbContext);
         }
 
-        private async void BtnRegister_Click(object sender, RoutedEventArgs e)
+        private void RegisterUserButton_Click(object sender, RoutedEventArgs e)
         {
-            var username = (TxtUsername.Text ?? "").Trim();
-            var email = (TxtEmail.Text ?? "").Trim();
-            var password = (PwdBox.Password ?? "").Trim();
-            var role = (CmbRole.SelectedItem as ComboBoxItem)?.Content?.ToString();
-
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                MessageBox.Show("Username is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                MessageBox.Show("Email is required (needed to link Staff).", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                MessageBox.Show("Password is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(role))
-            {
-                MessageBox.Show("Please choose a role.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             try
             {
-                using (var cn = new SqlConnection(ConnStr))
+                string username = (UsernameTextBox.Text ?? string.Empty).Trim();
+                string password = (PasswordBox.Password ?? string.Empty).Trim();
+
+                string role = null;
+                var selectedItem = RoleComboBox.SelectedItem as ComboBoxItem;
+                if (selectedItem != null && selectedItem.Content != null)
                 {
-                    await cn.OpenAsync();
-
-                    // Make sure Users table/columns exist (idempotent)
-                    await EnsureUsersSchemaAsync(cn);
-
-                    // Enforce uniqueness on Username/Email
-                    if (await ExistsAsync(cn, "SELECT 1 FROM dbo.Users WHERE Username=@u", ("@u", username)))
-                    {
-                        MessageBox.Show("Username already exists.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    if (await ExistsAsync(cn, "SELECT 1 FROM dbo.Users WHERE Email=@e", ("@e", email)))
-                    {
-                        MessageBox.Show("Email already exists.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-
-                    // Hash password if BCrypt available; otherwise store as-is (you can replace later)
-                    string passwordHash;
-                    try
-                    {
-                        // passwordHash = BCrypt.HashPassword(password); // if BCrypt referenced
-                        passwordHash = password; // fallback if no BCrypt yet
-                    }
-                    catch
-                    {
-                        passwordHash = password; // fallback
-                    }
-
-                    var sql = @"
-INSERT INTO dbo.Users(Username, PasswordHash, Role, Email, IsActive, CreatedDate)
-VALUES (@u, @p, @r, @e, 1, SYSUTCDATETIME());";
-
-                    using (var cmd = new SqlCommand(sql, cn))
-                    {
-                        cmd.Parameters.AddWithValue("@u", username);
-                        cmd.Parameters.AddWithValue("@p", passwordHash);
-                        cmd.Parameters.AddWithValue("@r", role);
-                        cmd.Parameters.AddWithValue("@e", email);
-                        await cmd.ExecuteNonQueryAsync();
-                    }
+                    role = selectedItem.Content.ToString().Trim();
                 }
 
-                MessageBox.Show("User registered.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // --- Validation ---
+                if (string.IsNullOrWhiteSpace(username) ||
+                    string.IsNullOrWhiteSpace(password) ||
+                    string.IsNullOrWhiteSpace(role))
+                {
+                    MessageBox.Show("Please fill out Username, Password, and Role.",
+                        "Input Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                // Clear form
-                TxtUsername.Clear();
-                TxtEmail.Clear();
-                PwdBox.Clear();
-                CmbRole.SelectedIndex = -1;
+                if (password.Length < 6)
+                {
+                    MessageBox.Show("Password must be at least 6 characters long.",
+                        "Input Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // --- Hash the password with BCrypt ---
+                // (Requires the 'BCrypt.Net-Next' NuGet package)
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+
+                // --- Create the user entity (uses your Models.User) ---
+                var newUser = new User
+                {
+                    Username = username,
+                    PasswordHash = hashedPassword, // store HASH, not raw password
+                    Role = role,
+                    IsActive = true
+                };
+
+                // Keep your existing UI flow/signature:
+                if (_userService.RegisterUser(newUser))
+                {
+                    MessageBox.Show(
+                        $"User '{username}' with role '{role}' registered successfully!",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    UsernameTextBox.Clear();
+                    PasswordBox.Clear();
+                    RoleComboBox.SelectedIndex = -1;
+                }
+                else
+                {
+                    // If your UserService exposes LastError, show it; otherwise keep the generic message.
+                    string message = "Registration failed. Please try again (perhaps the username is taken).";
+                    var lastErrorProp = _userService.GetType().GetProperty("LastError");
+                    if (lastErrorProp != null)
+                    {
+                        var lastError = lastErrorProp.GetValue(_userService, null) as string;
+                        if (!string.IsNullOrWhiteSpace(lastError)) message = "Registration failed: " + lastError;
+                    }
+
+                    MessageBox.Show(message, "Registration Failed",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to register user: " + ex.Message, "Error",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private static async Task EnsureUsersSchemaAsync(SqlConnection cn)
-        {
-            // Create Users table if missing; add Email if missing (safe to run repeatedly)
-            const string sql = @"
-IF OBJECT_ID('dbo.Users','U') IS NULL
-BEGIN
-    CREATE TABLE dbo.Users
-    (
-        UserID       INT IDENTITY(1,1) PRIMARY KEY,
-        Username     NVARCHAR(100) NOT NULL,
-        PasswordHash NVARCHAR(200) NOT NULL,
-        Role         NVARCHAR(50)  NOT NULL,
-        IsActive     BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT(1),
-        CreatedDate  DATETIME2 NOT NULL CONSTRAINT DF_Users_CreatedDate DEFAULT SYSUTCDATETIME()
-    );
-    CREATE UNIQUE INDEX UX_Users_Username ON dbo.Users(Username);
-END;
-
-IF COL_LENGTH('dbo.Users','Email') IS NULL
-BEGIN
-    ALTER TABLE dbo.Users ADD Email NVARCHAR(100) NULL;
-    -- Optional: unique index if you want to enforce unique emails
-    -- CREATE UNIQUE INDEX UX_Users_Email ON dbo.Users(Email) WHERE Email IS NOT NULL;
-END;
-";
-            using (var cmd = new SqlCommand(sql, cn))
-                await cmd.ExecuteNonQueryAsync();
-        }
-
-        private static async Task<bool> ExistsAsync(SqlConnection cn, string sql, params (string, object)[] p)
-        {
-            using (var cmd = new SqlCommand(sql, cn))
-            {
-                foreach (var (name, val) in p)
-                    cmd.Parameters.AddWithValue(name, val ?? DBNull.Value);
-                var o = await cmd.ExecuteScalarAsync();
-                return o != null;
+                MessageBox.Show("An unexpected error occurred: " + ex.Message,
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

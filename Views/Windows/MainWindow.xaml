@@ -1,11 +1,11 @@
 ﻿<Window x:Class="HospitalManagementSystem.Views.Windows.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:d="https://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Hospital Management System"
-        Height="650" Width="1000"
+        Height="800" Width="1200"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -18,6 +18,26 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Grid>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="MouseOver">
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="ArrowPath"
+                                                            Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                                                            To="#EEEEEE" Duration="0" />
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="ArrowPath"
+                                                            Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                                                            To="#CCCCCC" Duration="0" />
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+
                             <Path x:Name="ArrowPath" Data="M0,0 L4,4 L8,0 Z"
                                   Fill="#C0C0C0" HorizontalAlignment="Center"
                                   VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
@@ -26,12 +46,14 @@
                                 </Path.RenderTransform>
                             </Path>
                         </Grid>
+
+
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- Expander header style -->
+        <!-- Expander header style (uses DynamicResource for ToggleExpanderStyle) -->
         <Style x:Key="ExpanderHeaderStyle" TargetType="Expander">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -45,21 +67,29 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <Border x:Name="HeaderBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
+
                                     <ToggleButton Grid.Column="0"
                                                   IsChecked="{Binding Path=IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                                  Style="{DynamicResource ToggleExpanderStyle}"/>
-                                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Header}"/>
+                                                  Style="{DynamicResource ToggleExpanderStyle}"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center" />
+
+                                    <ContentPresenter Grid.Column="1"
+                                                      Content="{TemplateBinding Header}"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 </Grid>
                             </Border>
 
                             <ContentPresenter Grid.Row="1" x:Name="ContentPresenter" Visibility="Collapsed" />
                         </Grid>
+
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ContentPresenter" Property="Visibility" Value="Visible" />
@@ -70,7 +100,7 @@
             </Setter>
         </Style>
 
-        <!-- Sidebar button styles -->
+        <!-- NavigationButton style (Template defined, hover handled by Style.Triggers to avoid Template-level Setter issues) -->
         <Style x:Key="NavigationButton" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -83,12 +113,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter Margin="10,0,0,0"/>
+                        <!-- template defines a named border, but we don't rely on ControlTemplate.Triggers -->
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="2">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+
+            <!-- Use Style.Triggers (set property on the control) -->
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#2C3E50"/>
@@ -99,10 +132,12 @@
             </Style.Triggers>
         </Style>
 
+        <!-- SubMenuButton inherits NavigationButton and tweaks padding/font -->
         <Style x:Key="SubMenuButton" TargetType="Button" BasedOn="{StaticResource NavigationButton}">
             <Setter Property="Padding" Value="40,8"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
+
     </Window.Resources>
 
     <Grid>
@@ -113,106 +148,111 @@
 
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="#34495E">
-            <!-- Use DockPanel so Logout can stick to bottom -->
-            <DockPanel LastChildFill="True">
-
-                <!-- Logout at bottom -->
-                <Button Content="⬅ Logout"
-                        DockPanel.Dock="Bottom"
+            <StackPanel>
+                <Button Content="🏠 Dashboard"
                         Style="{StaticResource NavigationButton}"
-                        Margin="0,10,0,10"
-                        Click="LogoutButton_Click"/>
+                        Tag="dashboard"
+                        Click="NavigationButton_Click"/>
 
-                <!-- All other navigation stacked at the top -->
-                <StackPanel>
-                    <Button Content="🏠 Dashboard"
-                            Style="{StaticResource NavigationButton}"
-                            Tag="dashboard"
-                            Click="NavigationButton_Click"/>
+                <!-- User Management -->
+                <Expander x:Name="UserExpander"
+                          Header="👥 User Management"
+                          Style="{StaticResource ExpanderHeaderStyle}"
+                          IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="📝 Register New User" Style="{StaticResource SubMenuButton}" Tag="registeruser" Click="NavigationButton_Click"/>
+                        <Button Content="🔄 Modify Roles" Style="{StaticResource SubMenuButton}" Tag="modifyroles" Click="NavigationButton_Click"/>
+                        <Button Content="🔒 Deactivate/Activate" Style="{StaticResource SubMenuButton}" Tag="deactivateusers" Click="NavigationButton_Click"/>
+                        <Button Content="🔑 Password Reset" Style="{StaticResource SubMenuButton}" Tag="passwordreset" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
 
-                    <!-- User Management (admin only) -->
-                    <Expander x:Name="UserExpander" Header="👥 User Management"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="📝 Register New User" Style="{StaticResource SubMenuButton}" Tag="registeruser" Click="NavigationButton_Click"/>
-                            <Button Content="🔄 Modify Roles" Style="{StaticResource SubMenuButton}" Tag="modifyroles" Click="NavigationButton_Click"/>
-                            <Button Content="🔒 Deactivate/Activate" Style="{StaticResource SubMenuButton}" Tag="deactivateusers" Click="NavigationButton_Click"/>
-                            <Button Content="🔑 Password Reset" Style="{StaticResource SubMenuButton}" Tag="passwordreset" Click="NavigationButton_Click"/>
-                            <Button Content="🧑 Staff Management" Style="{StaticResource SubMenuButton}" Tag="staffmanagement" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
+                <!-- System Configuration -->
+                <Expander x:Name="SystemExpander"
+                          Header="⚙ System Configuration"
+                          Style="{StaticResource ExpanderHeaderStyle}"
+                          IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="🏥 Department Management" Style="{StaticResource SubMenuButton}" Tag="departmentmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
+                        <Button Content="⚡ Hospital Settings" Style="{StaticResource SubMenuButton}" Tag="hospitalsettings" Click="NavigationButton_Click"/>
+                        <Button Content="💾 Backup &amp; Maintenance" Style="{StaticResource SubMenuButton}" Tag="backupmaintenance" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
 
-                    <!-- System Configuration (admin only) -->
-                    <Expander x:Name="SystemExpander" Header="⚙️ System Configuration"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="🏥 Department Management" Style="{StaticResource SubMenuButton}" Tag="departmentmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
-                            <Button Content="⚡ Hospital Settings" Style="{StaticResource SubMenuButton}" Tag="hospitalsettings" Click="NavigationButton_Click"/>
-                            <Button Content="💾 Backup &amp; Maintenance" Style="{StaticResource SubMenuButton}" Tag="backupmaintenance" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
+                <!-- Reports & Analytics -->
+                <Expander x:Name="ReportsExpander"
+                          Header="📊 Reports &amp; Analytics"
+                          Style="{StaticResource ExpanderHeaderStyle}"
+                          IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="🖥 System Usage" Style="{StaticResource SubMenuButton}" Tag="systemusage" Click="NavigationButton_Click"/>
+                        <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
+                        <Button Content="👩‍⚕ Staff Performance" Style="{StaticResource SubMenuButton}" Tag="staffperformance" Click="NavigationButton_Click"/>
+                        <Button Content="🕵 Audit Logs" Style="{StaticResource SubMenuButton}" Tag="auditlogs" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
 
-                    <!-- Reports (admin/staff) -->
-                    <Expander x:Name="ReportsExpander" Header="📊 Reports &amp; Analytics"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="🖥 System Usage" Style="{StaticResource SubMenuButton}" Tag="systemusage" Click="NavigationButton_Click"/>
-                            <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
-                            <Button Content="👩‍⚕️ Staff Performance" Style="{StaticResource SubMenuButton}" Tag="staffperformance" Click="NavigationButton_Click"/>
-                            <Button Content="🕵️ Audit Logs" Style="{StaticResource SubMenuButton}" Tag="auditlogs" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
 
-                    <!-- Doctor -->
-                    <Expander x:Name="DoctorExpander" Header="🩺 Doctor Dashboard"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="📂 Medical Records" Style="{StaticResource SubMenuButton}" Tag="medicalrecords" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
 
-                    <!-- Nurse -->
-                    <Expander x:Name="NurseExpander" Header="🩺 Options"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="📅 Shift Management" Style="{StaticResource SubMenuButton}" Tag="shiftmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="communication" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
+                <!-- Doctor Dashboard -->
+                <Expander x:Name="DoctorExpander"
+                          Header="🩺 Doctor Dashboard"
+                          Style="{StaticResource ExpanderHeaderStyle}"
+                          IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📂 Medical Records" Style="{StaticResource SubMenuButton}" Tag="medicalrecords" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
+                <!-- Doctor Dashboard -->
+                <Expander x:Name="NurseExpander"
+          
+          Header="🩺 Options"
+           Style="{StaticResource ExpanderHeaderStyle}"
+          IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📅 Shift Management" Style="{StaticResource SubMenuButton}" Tag="shiftmanagement" Click="NavigationButton_Click"/>
 
-                    <!-- Clerk -->
-                    <Expander x:Name="ClerkExpander" Header="📅 Functions"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="False">
-                        <StackPanel>
-                            <Button Content="👨‍⚕️ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
-                            <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
-                            <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="communication" Click="NavigationButton_Click"/>
-                            <Button Content="💰 Billing" Style="{StaticResource SubMenuButton}" Tag="billing" Click="NavigationButton_Click"/>
-                            <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
+                        <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="Communication" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
+                <!-- Inventory -->
+                <Expander x:Name="InventoryExpander"
+             Header="📦 Inventory Management"
+             Style="{StaticResource ExpanderHeaderStyle}"
+             IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="🚚 Supplier Management" Style="{StaticResource SubMenuButton}" Tag="suppliermanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📉 Stock Level Monitoring" Style="{StaticResource SubMenuButton}" Tag="stockmonitoring" Click="NavigationButton_Click"/>
+                        <Button Content="🛒 Purchase Orders" Style="{StaticResource SubMenuButton}" Tag="purchaseorders" Click="NavigationButton_Click"/>
+                        <Button Content="🛒 Purchase Approvals" Style="{StaticResource SubMenuButton}" Tag="purchaseapprovals" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
 
-                    <!-- Patient ONLY -->
-                    <Expander x:Name="PatientExpander" Header="🙍 My Account"
-                              Style="{StaticResource ExpanderHeaderStyle}" IsExpanded="True" Visibility="Collapsed">
-                        <StackPanel>
-                            <Button Content="🧾 My Profile"
-                                    Style="{StaticResource SubMenuButton}"
-                                    Tag="patientprofile"
-                                    Click="NavigationButton_Click"/>
-                        </StackPanel>
-                    </Expander>
+                <Expander x:Name="ClerkExpander"
+            Header="📅Functions"
+         Style="{StaticResource ExpanderHeaderStyle}"
+         IsExpanded="False">
+                    <StackPanel>
+                        <Button Content="👨‍⚕ Patient Management" Style="{StaticResource SubMenuButton}" Tag="patientmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="📅 Appointment Management" Style="{StaticResource SubMenuButton}" Tag="appointmentmanagement" Click="NavigationButton_Click"/>
+                        <Button Content="💰 Financial Analytics" Style="{StaticResource SubMenuButton}" Tag="financialanalytics" Click="NavigationButton_Click"/>
+                        <Button Content="📂 Communication Management" Style="{StaticResource SubMenuButton}" Tag="Communication" Click="NavigationButton_Click"/>
+                        <Button Content="💰 Billing" Style="{StaticResource SubMenuButton}" Tag="billing" Click="NavigationButton_Click"/>
+                        <Button Content="🛏 Room Management" Style="{StaticResource SubMenuButton}" Tag="roommanagement" Click="NavigationButton_Click"/>
+                    </StackPanel>
+                </Expander>
+                <Button Content="⬅ Logout"
+        Style="{StaticResource NavigationButton}"
+        Click="LogoutButton_Click"
+        Margin="0,20,0,0"/>
 
-                </StackPanel>
-            </DockPanel>
+            </StackPanel>
         </Border>
-
-        <!-- Main Content -->
+        <!-- Main content area -->
         <Border Grid.Column="1" Background="White" Padding="20">
             <ContentControl x:Name="MainContentArea">
                 <TextBlock Text="Select an option from the sidebar."
@@ -222,4 +262,5 @@
             </ContentControl>
         </Border>
     </Grid>
+
 </Window>
