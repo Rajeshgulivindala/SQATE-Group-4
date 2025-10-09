@@ -1,0 +1,1 @@
+namespace HospitalManagementSystem.Perf { public sealed class PerfMarker {} }
