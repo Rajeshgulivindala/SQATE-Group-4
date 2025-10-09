@@ -579,6 +579,7 @@
     <Folder Include="Resources\Images\" />
     <Folder Include="Resources\Styles\" />
     <Folder Include="Resources\Themes\" />
+    <Folder Include="Tests\UI\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
