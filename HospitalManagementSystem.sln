@@ -5,14 +5,6 @@ VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalManagementSystem", "HospitalManagementSystem.csproj", "{0918351E-544D-4BFA-8109-1079C31927B6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HMS.Tests.Integration", "..\..\..\Downloads\HMS.DatabaseTests\HMS.DatabaseTests\HMS.Tests.Integration\HMS.Tests.Integration.csproj", "{23B1ECF5-4F44-45E7-8188-8C84AE0EA332}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HMS.LoadGen", "..\..\..\Downloads\HMS.PerformanceBundle\HMS.PerformanceBundle\HMS.LoadGen\HMS.LoadGen.csproj", "{D27B2CF9-628A-40D1-8408-13BA25507CA6}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HMS.Performance", "..\..\..\Downloads\HMS.PerformanceBundle\HMS.PerformanceBundle\HMS.Performance\HMS.Performance.csproj", "{AF7A5930-66CA-4CD4-9AF0-C8D96AF9E1BB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HMS.Tests.Unit", "..\HMS.Tests.Unit\HMS.Tests.Unit.csproj", "{2159E4EC-A743-4CC3-9104-7B80F29FB886}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,22 +15,6 @@ Global
 		{0918351E-544D-4BFA-8109-1079C31927B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0918351E-544D-4BFA-8109-1079C31927B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0918351E-544D-4BFA-8109-1079C31927B6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{23B1ECF5-4F44-45E7-8188-8C84AE0EA332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{23B1ECF5-4F44-45E7-8188-8C84AE0EA332}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{23B1ECF5-4F44-45E7-8188-8C84AE0EA332}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{23B1ECF5-4F44-45E7-8188-8C84AE0EA332}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D27B2CF9-628A-40D1-8408-13BA25507CA6}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{D27B2CF9-628A-40D1-8408-13BA25507CA6}.Debug|Any CPU.Build.0 = Release|Any CPU
-		{D27B2CF9-628A-40D1-8408-13BA25507CA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D27B2CF9-628A-40D1-8408-13BA25507CA6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AF7A5930-66CA-4CD4-9AF0-C8D96AF9E1BB}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{AF7A5930-66CA-4CD4-9AF0-C8D96AF9E1BB}.Debug|Any CPU.Build.0 = Release|Any CPU
-		{AF7A5930-66CA-4CD4-9AF0-C8D96AF9E1BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AF7A5930-66CA-4CD4-9AF0-C8D96AF9E1BB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2159E4EC-A743-4CC3-9104-7B80F29FB886}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2159E4EC-A743-4CC3-9104-7B80F29FB886}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2159E4EC-A743-4CC3-9104-7B80F29FB886}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2159E4EC-A743-4CC3-9104-7B80F29FB886}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
