@@ -343,6 +343,7 @@
     <Compile Include="Tests\Db\DbConnectivityTests.cs" />
     <Compile Include="Tests\Db\PatientsCrudTests.cs" />
     <Compile Include="Tests\Db\SchemaDiagnosticsTests.cs" />
+    <Compile Include="Tests\UI\UiTestBase.cs" />
     <Compile Include="Tests\Unit\AppointmentModelValidationTests.cs" />
     <Compile Include="Tests\Unit\AuthenticationServiceTests.cs" />
     <Compile Include="Tests\Unit\BaseViewModelTests.cs" />
@@ -579,7 +580,6 @@
     <Folder Include="Resources\Images\" />
     <Folder Include="Resources\Styles\" />
     <Folder Include="Resources\Themes\" />
-    <Folder Include="Tests\UI\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
