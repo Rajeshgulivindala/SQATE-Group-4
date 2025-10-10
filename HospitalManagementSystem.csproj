@@ -339,6 +339,7 @@
     <Compile Include="Services\Navigation\INavigationService.cs" />
     <Compile Include="Services\Navigation\NavigationService.cs" />
     <Compile Include="Tests\Db\AppointmentsConstraintTests.cs" />
+    <Compile Include="Tests\Db\AppointmentsSchemaTests.cs" />
     <Compile Include="Tests\Db\DbHealthConnectivityTests.cs" />
     <Compile Include="Tests\Infrastructure\BaseIntegrationTest.cs" />
     <Compile Include="Tests\Db\DbConnectivityTests.cs" />
