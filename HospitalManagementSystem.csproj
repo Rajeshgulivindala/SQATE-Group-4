@@ -342,6 +342,7 @@
     <Compile Include="Tests\Db\AppointmentsSchemaTests.cs" />
     <Compile Include="Tests\Db\CoreTablesExistTests.cs" />
     <Compile Include="Tests\Db\DbHealthConnectivityTests.cs" />
+    <Compile Include="Tests\Db\LookupCountsReadableTests.cs" />
     <Compile Include="Tests\Infrastructure\BaseIntegrationTest.cs" />
     <Compile Include="Tests\Db\DbConnectivityTests.cs" />
     <Compile Include="Tests\Db\PatientsCrudTests.cs" />
